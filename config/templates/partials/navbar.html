@@ -1,0 +1,30 @@
+<!--Navbar-->
+<nav id="nav" class="navbar navbar-default">
+    <div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="{% url 'audition_management:index' %}">
+                AuditionMe!
+            </a>
+        </div>
+        <!-- <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1"> -->
+            <ul class="nav navbar-nav navbar-right">
+                <li class="nav-item dropdown btn-group">
+                    <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% if user.is_authenticated %} Hello {% endif %} {{ user.first_name }} <i style="margin-left: 5px" class="fa fa-cog fa-lg" aria-hidden="true"></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -150px; width: 220px;" aria-labelledby="dropdownMenu2">
+                        {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'session:logout' %}">Log Out</a>
+                        </li>
+                        {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'session:login' %}">Log In</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </li>
+            </ul>
+        <!-- </div> -->
+    </div>
+</nav>

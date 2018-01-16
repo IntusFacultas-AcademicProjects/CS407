@@ -1,0 +1,15 @@
+Django==1.11.3
+django-appconf==1.0.2
+django-bootstrap-datepicker==1.2.3
+django-bootstrap3-datetimepicker==2.2.3
+django-bootstrap3-datetimepicker-2==2.5.0
+django-extensions==1.9.7
+django-select2==6.0.0
+django-session-security==2.5.1
+django-sorting==0.1
+django-widget-tweaks==1.4.1
+python-dateutil==2.6.1
+pytz==2017.2
+schedule==0.4.3
+six==1.10.0
+typing==3.6.2

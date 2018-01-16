@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}AuditionMe!{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-sm-12">
+        <div class='wrapper' style="height: 70%">
+            <table id="roles" class="table table-hover table-striped">
+                <thead>
+                    <tr style="background-color:white;">
+                        <th>Role</th>
+                        <th>Tags</th>
+                        <th>&nbsp;</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Example</td>
+                        <td><span class="badge badge-primary">TAGS</span>
+                        <span class="badge badge-primary">N'</span>
+                        <span class="badge badge-primary">SHIT</span>
+                        </td>
+                        <td><button class="btn btn-primary btn-sm">View</button></td>
+                    </tr>
+                </tbody>
+            </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    $(function() {
+         $("#results").floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
+    })
+</script>
+{% endblock js %}
