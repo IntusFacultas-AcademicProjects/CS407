@@ -10,6 +10,8 @@ class AuditionAccount(models.Model):
         blank=True,
         null=True,
     )
+    def __str__(self):
+        return "%s %s" % (self.profile.first_name, self.profile.last_name)
 
 
 class CastingAccount(models.Model):
@@ -21,6 +23,8 @@ class CastingAccount(models.Model):
         null=True,
     )
 
+    def __str__(self):
+        return "%s %s" % (self.profile.first_name, self.profile.last_name)
 # Create your models here.
 
 
@@ -45,12 +49,44 @@ class Role(models.Model):
                               related_name="roles")
     domain = models.IntegerField("Status", choices=STATUS_CHOICES)
 
+    def __str__(self):              # __unicode__ on Python 2
+        return "%s, %s" % (self.name, self.description)
+
+    def as_dict(self):
+        events = PerformanceEvent.objects.filter(role=self)
+        events = [obj.as_dict() for obj in events]
+        tags = Tag.objects.filter(role=self)
+        tags = [str(obj) for obj in tags]
+        return {
+            "role": {
+                "date": '"' + self.date + '"',
+                "description": '"' + self.description + '"',
+                "domain": self.domain,
+                "address": self.address,
+            },
+            "agent": str(self.agent),
+            "events": events,
+            "tags": tags,
+        }
+
 
 class PerformanceEvent(models.Model):
     date = models.DateField("Date")
     name = models.CharField("Name", max_length=128)
     role = models.ForeignKey(Role, on_delete=models.CASCADE,
                              related_name="dates")
+
+    def __str__(self):              # __unicode__ on Python 2
+        return "%s %s" % (self.date, self.name)
+
+    def as_dict(self):
+        return {
+            "event": {
+                "date": '"' + self.date + '"',
+                "name": '"' + self.name + '"'
+            },
+            "role": str(self.role)
+        }
 
 
 class Tag(models.Model):
@@ -69,3 +105,6 @@ class Tag(models.Model):
         blank=True,
         null=True,
     )
+
+    def __str__(self):
+        return self.name

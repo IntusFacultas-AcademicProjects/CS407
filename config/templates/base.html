@@ -73,6 +73,16 @@
     {% block js %}
     {% endblock js %}
     <script type="text/javascript">
+        function processJS(data) {
+            // pass in a string
+            // returns a JSON
+            data = data.substring(1, data.length - 1);
+            var split = data.split("\'").join("\"").split("\"\"").join("\"");
+            split = '[' + split + ']';
+            split = JSON.parse(split)
+            return split;
+        }
+
         function showSuccessMessage(message) {
             /*
                 Shows success message DOM element for UX.
