@@ -85,7 +85,6 @@ class PerformanceEvent(models.Model):
                 "date": '"' + self.date + '"',
                 "name": '"' + self.name + '"'
             },
-            "role": str(self.role)
         }
 
 
