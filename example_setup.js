@@ -35,15 +35,28 @@ $(function() {
             stuff2: false,
             stuff3: "",
         },
+        computed: {
+            // this is for data that is computed based on changing data or accessing store data
+            data1: function() {
+                // how we access the store data
+                return store.state.data1;
+            }
+            stuff3_computed: function() {
+                // notice that we access data bound to the Vue object using the 'this' keyword
+                return this.stuff3 + " automatically adding on something else";
+            }
+        }
         mounted: function() {
             /* this is run at the beginning of Vue's life cycle.
             // Use this to run stuff that needs to happen immediately
             // once the page loads properly.
+            // accessing data from here will be through the 'this' keyword.
             */
         },
         methods: function() {
             method1: function() {
-                // stuff
+                // notice that how we access data in methods is different from computed
+                return vueApp.stuff3;
             }
         }
     })
