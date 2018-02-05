@@ -5,6 +5,65 @@
 
 {% block content %}
 <div id="jsonData" js-data="{{some_django_variable}}"></div>
+<div class = "row">
+    <div class = "col-sm-6">
+        <div class = "panel panel-default">
+            <div class="panel-heading">Filter by Text</div>
+            <div class="panel-body">
+                <form id="text-filter">
+                    <div class="input-group">
+                        <input type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
+                        <div class="input-group-btn">
+                            <button v-on:click="getFilterText(filterText)" class="btn btn-primary" type="button">
+                                <i class="glyphicon glyphicon-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class ="col-sm-6">
+        <div class = "panel panel-default">
+            <div class="panel-heading">Filter by Tag</div>
+            <div class="panel-body">
+                <form id="tag-filter">
+                    <div class="input-group">
+                        <input type="text" class="form-control" v-model="filterTag" placeholder="Enter tag to filter by">
+                        <div class="input-group-btn">
+                            <button v-on:click="getFilterTag(filterTag)" class="btn btn-primary" type="button">
+                                <i class="glyphicon glyphicon-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<div class = "row">
+    <div class = "col-sm-6">
+        <div class = "panel panel-default">
+            <div class="panel-heading">Filter by Date</div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <div class='input-group date' id='datetimepicker1'>
+                        <input type='text' class="form-control" v-model="filterDate" />
+                        <span class="input-group-addon">
+                            <span class="glyphicon glyphicon-calendar"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class ="col-sm-6">
+        <div class = "panel panel-default">
+            <div class="panel-heading">Filter by Location</div>
+            <div class="panel-body">Yeah IDK bout this one</div>
+        </div>
+    </div>
+</div>
 <div class="row">
     <div class="col-sm-12">
         <div class='wrapper' style="height: 70%">
@@ -41,6 +100,78 @@
                 return $table.closest('.wrapper');
             }
         });
+    }),
+
+    $(function() {
+    // Vue basic setup to work with Django
+
+         textFilterApp = new Vue({
+            el: "#text-filter",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+                filterText: "",
+            },
+
+            methods: {
+                getFilterText: function(filterText) {
+                    if (event) {
+                        textFilterApp.filterText = filterText;
+                        console.log(textFilterApp.filterText);
+                    }
+                }
+            }
+        }),
+
+         tagFilterApp = new Vue({
+            el: "#tag-filter",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+                filterTag: "",
+            },
+
+            methods: {
+                getFilterTag: function(filterTag) {
+                    if (event) {
+                        tagFilterApp.filterTag = filterTag;
+                        console.log(tagFilterApp.filterTag);
+                    }
+                }
+            }
+        }),
+
+         dateFilterApp = new Vue({
+            el: "#date-filter",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+                filterDate: "",
+            },
+            mounted: function() {
+                $('#datetimepicker1').datetimepicker();
+                // we save the 'this' keyword here because once we enter the next scope
+                // 'this' will become the jQuery object $("#datetimepicker1") so
+                // in order to access the app, we save it to a local variable
+                var internalApp = this;
+    
+                // Eonasdan does not support Vue out of the box, so we use jQuery event handler
+                // catching the custom event from Eonasdan's API. 
+                $('#datetimepicker1').on('dp.change', function() {
+                    // get the date object in MomentJS Date Object format
+                    var momentJSDateObj = $('#datetimepicker1').data('DateTimePicker').date();
+                    // example of how to convert it to string
+                    console.log(momentJSDateObj.format('YYYY-MM-DD'));
+                    // saving it to Vue
+                    internalApp.filterDate = momentJSDateObj;
+                    console.log("Vue data object follows:");
+                    console.log(internalApp.filterDate)
+                });
+            },
+        })
     })
 </script>
 {% endblock js %}
