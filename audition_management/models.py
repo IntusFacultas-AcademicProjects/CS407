@@ -47,7 +47,7 @@ class Role(models.Model):
     studio_address = models.CharField("Studio Address", max_length=512)
     agent = models.ForeignKey(CastingAccount, on_delete=models.CASCADE,
                               related_name="roles")
-    domain = models.IntegerField("Status", choices=STATUS_CHOICES)
+    status = models.IntegerField("Status", choices=STATUS_CHOICES)
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s, %s" % (self.name, self.description)
