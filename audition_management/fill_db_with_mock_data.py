@@ -40,7 +40,7 @@ for i in range(0, 100):
         status=i % 2
     )
 
-    for _ in range(0, randint(3, 10)):
+    for _ in range(0, randint(len(tags)/3, len(tags))):
         Tag.objects.create(
             name=tags[tag_index],
             role=role,
