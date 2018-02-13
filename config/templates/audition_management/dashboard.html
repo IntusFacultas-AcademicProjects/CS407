@@ -28,7 +28,11 @@
         <div class = "panel panel-default">
             <div class="panel-heading">Filter by Tag</div>
             <div class="panel-body">
-                <span class="badge badge-primary" v-for="tag in tags" v-on:click="setFilterTag(tag)">(( tag ))</span>
+                <select class="form-control" style="width:100%" id="tagSelect" multiple>
+                    <option v-for="tag, index in tags" v-bind:value="tag">
+                        (( tag ))
+                    </option>
+                </select>
             </div>
         </div>
     </div>
@@ -102,6 +106,10 @@
                 return $table.closest('.wrapper');
             }
         });
+         setTimeout(function() {
+            $("#tagSelect").select2();
+        }, 100);
+         
     }),
 
     $(function() {
@@ -167,7 +175,9 @@
 
                 //sort the list of tags
                 internalApp.tags.sort();
-
+                $('#tagSelect').on("change", function(e) { 
+                   internalApp.tagFilter($("#tagSelect").val())
+                });
 
                 $('#datetimepicker1').datetimepicker();
                 
@@ -202,6 +212,7 @@
                     console.log("Vue data object follows:");
                     console.log(internalApp.filterDate)
                 });
+
             },
             methods: {
                 setFilterText: function(filterText) {
@@ -228,7 +239,7 @@
                         filterApp.displayedRoles = filteredRoles;
                     }
                 },
-
+/*
                 setFilterTag: function(filterTag) {
                     if (event) {
 
@@ -296,8 +307,30 @@
                         filterApp.filterText = "";
                         filterApp.filterDate = "";
                     }
-                },
+                }, */
+                tagFilter: function(selected) {
+                    console.log(selected)
+                    if (selected.length == 0) {
+                        filterApp.displayedRoles = filterApp.allRoles;
+                    }
+                    else {
+                        filterApp.displayedRoles = filterApp.allRoles.filter(function(role) {
+                            var val = false;
+                            for (var x = 0; x < selected.length; x++) {
+                                if (role.tags.indexOf(selected[x]) > -1) {
+                                    val = true;
+                                }
+                                else {
+                                    if (val) {
+                                        return false;
+                                    }
+                                }
 
+                            }
+                            return val;
+                        })
+                    }
+                },
                 resetFilters: function() {
                     filterApp.filterText = "";
                     filterApp.filterTags = [];
