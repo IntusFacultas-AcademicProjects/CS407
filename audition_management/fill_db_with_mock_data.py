@@ -1,6 +1,8 @@
 from audition_management.models import CastingAccount, Role, Tag
 from random import randint
 
+ROLES_TO_CREATE = 100
+
 descriptions = [
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nunc pulvinar urna sed dui auctor maximus quis nec orci.',
     'Integer congue nibh mattis purus viverra, nec euismod mi congue.',
@@ -30,7 +32,7 @@ tags = [
 ]
 
 tag_index = 0
-for i in range(0, 100):
+for i in range(0, ROLES_TO_CREATE):
     role = Role.objects.create(
         name='Test Role # {}'.format(i),
         description=descriptions[i % len(descriptions)],
