@@ -1,28 +1,140 @@
-from django.shortcuts import render
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views import View
+from django.http import HttpResponseRedirect
 from django.contrib import messages
-from audition_management import Role
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth.models import User
+from django.shortcuts import render
+from django.core.urlresolvers import reverse
+from django.views import View
+from audition_management.models import Role, AuditionAccount, CastingAccount
+from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
 # Create your views here.
+from audition_management.forms import RoleCreationForm
 
 
 class DashboardView(LoginRequiredMixin, View):
 
+    def handle_request(self, request):
+        if request.GET:
+            return DashboardView.get(request)
+
     def get(self, request):
-        return render(request, 'audition_management/dashboard.html')
+        roles = Role.objects.all()
+        dictionaries = [obj.as_dict() for obj in roles]
+        return render(request, 'audition_management/dashboard.html', {
+            "roles": dictionaries
+        })
+
+
+class AccountDelete(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        user = User.objects.get(pk=pk)
+        if request.user != user:
+            messages.error(request, "You cannot delete this account.")
+            return HttpResponseRedirect(
+                reverse("audition_management:settings"))
+        else:
+            user.delete()
+            messages.success(request, "Account deleted.")
+            return HttpResponseRedirect(reverse("session:login"))
+
+
+class SettingsView(LoginRequiredMixin, View):
+
+    def handle_request(self, request):
+        if request.GET:
+            return SettingsView.get(request)
+        else:
+            return SettingsView.post(request)
+
+    def get_user(self, current_user):
+        user = None
+        try:
+            user = current_user.audition_account
+        except AuditionAccount.DoesNotExist:
+            try:
+                user = current_user.casting_account
+            except CastingAccount.DoesNotExist:
+                pass
+        return user
+
+    def get(self, request):
+        user = self.get_user(request.user)
+        form = SettingsForm(instance=request.user)
+        change_password_form = PasswordChangeForm(request.user)
+        return render(request, 'session/settings.html', {
+            'form': form,
+            "change_password_form": change_password_form,
+        })
+
+    def post(self, request):
+        user = self.get_user(request.user)
+        if request.POST.get("form_type") == 'account_form':
+            form = SettingsForm(request.POST)
+            if form.is_valid():
+                form.save()
+                user.profile.set_password(form.password1)
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+        else:
+            form = PasswordChangeForm(request.POST)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Password changed successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
 
 
 class RoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
-        role = Role.objects.get(pk=pk)
-        dates = role.dates.all()
-        return render(request, 'audition_management/role_view.html', {
-            "role": role,
-            "date": dates
+        dictionary = object
+        dates = object
+        if Role.objects.get(id=pk).exists():
+            role = Role.objects.get(id=pk)
+            dictionary = role.as_dict()
+            dates = role.dates.all()
+        else:
+            dictionary = None
+            dates = None
+        return render(request, 'audition_management/role.html', {
+            "role": dictionary,
+            "dates": dates
         })
+
+
+class RoleCreationView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        form = RoleCreationForm()
+        return render(
+            request,
+            'audition_management/create.html',
+            {'form': form}
+        )
+
+    def post(self, request):
+        form = RoleCreationForm(request.POST)
+        if form.is_valid():
+            role = Role(
+                name=form.name,
+                description=form.description,
+                domain=form.domain.current(),
+                studio_address=form.studio_address
+            )
+            role.save()
+            return render(request, 'audition_management/role.html', {
+                'role': role.as_dict()
+            })
+        else:
+            return render(
+                request,
+                'audition_management/create.html',
+                {'form': form}
+            )
 
 
 """

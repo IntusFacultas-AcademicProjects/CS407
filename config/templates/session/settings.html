@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Account Settings!{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-9">
+        <form class="form-horizontal" style="margin:20px;" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="account_form">
+            {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {% render_field field class+="form-control" %}
+                {% if field.help_text %}
+                <small class="form-text text-muted" >{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+            {% if field.errors|length > 0 %}
+            <div class="form-group">
+                <ul>
+                    {% for error in field.errors %}
+                    <li style="color: red">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Update Information</button>
+        </form>
+    </div>
+    <div class="col-lg-3">
+         <form class="form-horizontal" style="margin:20px;" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="form_type" value="change_password_form">
+            {% for field in change_password_form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {% render_field field class+="form-control" %}
+                {% if field.help_text %}
+                <small class="form-text text-muted">{{ field.help_text|safe }}
+                </small>
+                {% endif %}
+            </div>
+            {% if field.errors|length > 0 %}
+            <div class="form-group">
+                <ul>
+                    {% for error in field.errors %}
+                    <li style="color: red">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Change Password</button>
+    </div>
+</div>
+<div>
+    <!-- {% url 'app_name:url_name' %} gets replaced with the url that Django has on file with that name -->
+    <form method="post" action="{% url 'audition_management:delete-account' pk=user.id %}">
+        <!-- CSRF is to protect against cross site request forgery attacks. This will be translated by
+        django into:
+        <input type="hidden" name="csrf_token" value="random_string_of_numbers_and_letters_that_only_you_can_have"> -->
+        {% csrf_token %}
+        <button class="btn btn-danger" type="submit">Delete Account</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block js %}
+{% endblock js %}

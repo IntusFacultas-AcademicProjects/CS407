@@ -10,6 +10,7 @@ class AuditionAccount(models.Model):
         blank=True,
         null=True,
     )
+
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
 
@@ -25,7 +26,6 @@ class CastingAccount(models.Model):
 
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
-# Create your models here.
 
 
 class Role(models.Model):
@@ -47,7 +47,7 @@ class Role(models.Model):
     studio_address = models.CharField("Studio Address", max_length=512)
     agent = models.ForeignKey(CastingAccount, on_delete=models.CASCADE,
                               related_name="roles")
-    domain = models.IntegerField("Status", choices=STATUS_CHOICES)
+    status = models.IntegerField("Status", choices=STATUS_CHOICES)
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s, %s" % (self.name, self.description)
@@ -59,12 +59,12 @@ class Role(models.Model):
         tags = [str(obj) for obj in tags]
         return {
             "role": {
-                "date": '"' + self.date + '"',
+                "name": '"' + self.name + '"',
                 "description": '"' + self.description + '"',
                 "domain": self.domain,
-                "address": self.address,
+                "address": self.studio_address,
+                "agent": str(self.agent),
             },
-            "agent": str(self.agent),
             "events": events,
             "tags": tags,
         }
