@@ -1,6 +1,4 @@
 from django.conf.urls import url
-# from django.contrib import admin
-from django.contrib.auth import views as auth_views
 from audition_management import views
 
 
@@ -12,6 +10,4 @@ urlpatterns = [
     url(r'^create/$', views.RoleCreationView.as_view(), name='create'),
     url(r'^account/(?P<pk>[0-9]+)/$', views.AccountDelete.as_view(),
         name="delete-account")
-    # url(r'^admin/', admin.site.urls),
-
 ]
