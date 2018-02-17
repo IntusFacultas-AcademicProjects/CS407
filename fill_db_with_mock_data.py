@@ -1,3 +1,8 @@
+import os
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+django.setup()
+
 from audition_management.models import CastingAccount, Role, Tag
 from random import randint
 
@@ -28,26 +33,27 @@ tags = [
     'Quick',
     'Taggy',
     'Good',
-    'Amazing'
+    'Amazing',
+    'Black hair',
+    'Green eyes'
 ]
 
 tag_index = 0
+agent = CastingAccount.objects.all()[0]
 for i in range(0, ROLES_TO_CREATE):
     role = Role.objects.create(
         name='Test Role # {}'.format(i),
         description=descriptions[i % len(descriptions)],
-        domain=Role.DOMAIN_CHOICES[i % len(Role.DOMAIN_CHOICES)],
+        domain=0,
         studio_address=addresses[i % len(addresses)],
-        agent=CastingAccount.objects.all()[0],
-        status=i % 2
+        agent=agent
     )
-
-    for _ in range(0, randint(len(tags)/3, len(tags))):
-        Tag.objects.create(
+    for _ in range(0, randint(len(tags) / 3, len(tags))):
+        tag = Tag.objects.create(
             name=tags[tag_index],
             role=role,
-            agent=CastingAccount.objects.all()[0]
         )
+        role.tags.add(tag)
         tag_index += 1
         if tag_index >= len(tags):
             tag_index = 0
