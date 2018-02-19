@@ -23,6 +23,7 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         roles = Role.objects.all()
         dictionaries = [obj.as_dict() for obj in roles]
+        print(dictionaries)
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries
         })
