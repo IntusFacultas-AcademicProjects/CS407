@@ -86,7 +86,7 @@
                         <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                         </td>
                         <td>(( role.role.address ))</td>
-                        <td><button class="btn btn-primary btn-sm pull-right">View</button></td>
+                        <td><a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a></td>
                     </tr>
                 </tbody>
             </table>
@@ -122,6 +122,7 @@
                 tags: [],
                 displayedRoles: [],
                 allRoles: [],
+                url: "{% url 'audition_management:role' pk=0 %}"
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -164,9 +165,11 @@
                     // saving it to Vue
                     internalApp.filterDate = momentJSDateObj.format('YYYY-MM-DD');
                 });
-
             },
             methods: {
+                setUrl: function(num) {
+                    return filterApp.url.replace("0", num)
+                },
                 setFilterText: function(filterText) {
                     if (event) {
                         //update the text to filter by
