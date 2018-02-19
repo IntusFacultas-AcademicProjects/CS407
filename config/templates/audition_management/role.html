@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Role{% endblock %}
+
+{% block content %}
+<div id="roleDiv">
+	<div class = "container-fluid">
+	      <div class="row">
+	        <div class="col-sm-offset-3 col-sm-6">
+	          <div class="panel panel-primary">
+	            <div class="panel-heading">
+	              <h2 class='text-center'>Role Info</h2>
+	            </div>
+	            <div class="panel-body">
+	              <div class="text-center">
+	                <button type="submit" class="btn btn-primary text">Schedule Audition</button>
+	              </div>
+	            </div>
+	          </div>
+	        </div>
+	      </div>
+	  </div>
+</div>
+{% endblock %}
+
+
+
+{% block js %}
+<script type="text/javascript">
+	var unparsed = "{{role}}"
+	 $(function() {
+	 	unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
+	 	console.log(unparsed)
+        parsed = processJS(unparsed)    
+
+	    roleApp = new Vue({
+	        el: "#roleDiv",
+	        delimiters: ["((","))"],
+	        data: {
+	        },
+	        mounted: function() {
+	        	
+	        },
+	        methods: {
+	        
+	        }
+	    })
+	})
+</script>
+{% endblock js %}

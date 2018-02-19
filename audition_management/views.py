@@ -94,18 +94,17 @@ class RoleView(LoginRequiredMixin, View):
     def get(self, request, pk):
         dictionary = object
         dates = object
-        if Role.objects.get(id=pk).exists():
+        try:
             role = Role.objects.get(id=pk)
             dictionary = role.as_dict()
             dates = role.dates.all()
-        else:
+        except Role.DoesNotExist:
             dictionary = None
             dates = None
         return render(request, 'audition_management/role.html', {
             "role": dictionary,
             "dates": dates
         })
-
 
 class RoleCreationView(LoginRequiredMixin, View):
 
