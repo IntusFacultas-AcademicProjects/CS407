@@ -6,7 +6,6 @@
                 AuditionMe!
             </a>
         </div>
-        <!-- <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1"> -->
             <ul class="nav navbar-nav navbar-right">
                 <li class="nav-item dropdown btn-group">
                     <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -15,10 +14,10 @@
                     <ul class="dropdown-menu dropdown pull-right" style="margin-left: -150px; width: 220px;" aria-labelledby="dropdownMenu2">
                         {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'session:logout' %}">Log Out</a>
+                            <a class="nav-link" href="{% url 'audition_management:settings' %}">Account Overview</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'audition_management:settings' %}">Account Settings</a>
+                            <a class="nav-link" href="{% url 'session:logout' %}">Log Out</a>
                         </li>
                         {% else %}
                         <li class="nav-item">
@@ -28,6 +27,5 @@
                     </ul>
                 </li>
             </ul>
-        <!-- </div> -->
     </div>
 </nav>
