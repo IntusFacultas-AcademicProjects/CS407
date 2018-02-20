@@ -128,7 +128,7 @@ class SettingsView(LoginRequiredMixin, View):
                 if account_type == "Casting Agent":
                     is_caster = True
                 return render(request, 'session/settings.html', {
-                    'form': form,
+                    'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_caster": is_caster
