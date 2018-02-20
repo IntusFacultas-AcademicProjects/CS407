@@ -9,7 +9,7 @@
 <div class = "row">
     <div class = "col-sm-6">
         <div class = "panel panel-default">
-            <div class="panel-heading">Filter by Description Text</div>
+            <div class="panel-heading">Filter by Role Title</div>
             <div class="panel-body">
                 <form id="text-filter">
                     <div class="input-group">
@@ -80,8 +80,8 @@
                 </thead>
                 <tbody>
                     <tr v-for="role in displayedRoles">
-                        <td>(( role.role.description ))</td>
-                        <td>(( role.agent ))</td>
+                        <td>(( role.role.name ))</td>
+                        <td>(( role.role.agent ))</td>
                         <td>(( role.role.date ))</td>
                         <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                         </td>
@@ -103,7 +103,6 @@
     var unparsed = "{{roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        console.log(unparsed)
         parsed = processJS(unparsed)    
          $("#results").floatThead({
             scrollContainer: function($table){
@@ -189,7 +188,7 @@
 
                         //filter the displayed roles based on the filterText
                         for (i = 0; i < filterApp.allRoles.length; i++) {
-                            if (filterApp.allRoles[i].role.description.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
+                            if (filterApp.allRoles[i].role.name.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
                                 filteredRoles.push(filterApp.allRoles[i]);
                             }
                         }

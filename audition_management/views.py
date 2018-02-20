@@ -12,7 +12,7 @@ from difflib import SequenceMatcher
 from nltk.corpus import wordnet
 # Create your views here.
 from audition_management.forms import RoleCreationForm
-
+from audition_management.forms import EditRoleForm
 
 class DashboardView(LoginRequiredMixin, View):
 
@@ -23,7 +23,6 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         roles = Role.objects.all()
         dictionaries = [obj.as_dict() for obj in roles]
-        print(dictionaries)
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries
         })
@@ -165,6 +164,7 @@ class RoleCreationView(LoginRequiredMixin, View):
 
     def post(self, request):
         form = RoleCreationForm(request.POST)
+        print(form.name)
         if form.is_valid():
             role = Role(
                 name=form.name,
@@ -182,7 +182,43 @@ class RoleCreationView(LoginRequiredMixin, View):
                 'audition_management/create.html',
                 {'form': form}
             )
+class EditRoleView(LoginRequiredMixin, View):
 
+    def get(self, request, pk):
+        form = EditRoleForm()
+        dictionary = object
+        dates = object
+        try:
+            role = Role.objects.get(id=pk)
+            dictionary = role.as_dict()
+            dates = role.dates.all()
+        except Role.DoesNotExist:
+            dictionary = None
+            dates = None
+        return render(request, 'audition_management/editRole.html', {
+            "role": dictionary,
+            "dates": dates,
+            'form': form
+        })
+
+    def post(self, request):
+        form = EditRoleForm(request.POST)
+        if form.is_valid():
+            role = Role.objects.get(pk="NEED TO FIGURE THIS OUT")
+            role.name=form.name,
+            role.description=form.description,
+            role.domain=form.domain.current(),
+            role.studio_address=form.studio_address
+            role.save()
+            return render(request, 'audition_management/role.html', {
+                'role': role.as_dict()
+            })
+        else:
+            return render(
+                request,
+                'audition_management/EditRole.html',
+                {'form': form}
+            )
 
 """
     def similar(a, b):

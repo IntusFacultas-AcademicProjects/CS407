@@ -24,3 +24,11 @@ class RoleCreationForm(forms.ModelForm):
         widgets = {
             'domain': Select2Widget,
         }
+
+class EditRoleForm(forms.ModelForm):
+    class Meta:
+        model = Role
+        fields = ('name', 'description', 'domain', 'studio_address')
+        widgets = {
+            'domain': Select2Widget,
+        }
