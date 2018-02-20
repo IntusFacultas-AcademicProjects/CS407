@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Edit Role{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-9">
+        <form class="form-horizontal" style="margin:20px;" method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                {{ field.label_tag }}
+                {% render_field field class+="form-control" %}
+                {% if field.help_text %}
+                <small class="form-text text-muted" >{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+            {% if field.errors|length > 0 %}
+            <div class="form-group">
+                <ul>
+                    {% for error in field.errors %}
+                    <li style="color: red">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+            {% endfor %}
+            <button class="btn btn-primary" type="submit">Edit Role</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+
+
+{% block js %}
+<script type="text/javascript">
+	var unparsed = "{{role}}"
+	 $(function() {
+	 	unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
+        parsed = JSON.parse(unparsed) 
+
+	    roleApp = new Vue({
+	        el: "#editRoleDiv",
+	        delimiters: ["((","))"],
+	        data: {
+	        	currentRole: "",
+	        	domain: "",
+	        },
+	        mounted: function() {
+	        	this.currentRole = parsed;
+
+	        	//set the domain text for the role
+	        	switch(this.currentRole.role.domain) {
+	        		case 0: this.domain = "General Acting";
+	        			break;
+	        		case 1: this.domain = "Voice Acting";
+	        			break;
+	        		case 2: this.domain = "Stage Acting";
+	        			break;
+	        		case 3: this.domain = "Special Effects";
+	        			break;
+	        		case 4: this.domain = "Stage Crew";
+	        			break;
+	        		case 5: this.domain = "Other";
+	        			break;
+	        	}
+	        },
+	        methods: {
+	        
+	        }
+	    })
+	})
+</script>
+{% endblock js %}

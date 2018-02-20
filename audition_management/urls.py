@@ -9,5 +9,6 @@ urlpatterns = [
     url(r'^role/(?P<pk>[0-9+]+)$', views.RoleView.as_view(), name='role'),
     url(r'^create/$', views.RoleCreationView.as_view(), name='create'),
     url(r'^account/(?P<pk>[0-9]+)/$', views.AccountDelete.as_view(),
-        name="delete-account")
+        name="delete-account"),
+    url(r'^editrole/(?P<pk>[0-9+]+)$', views.EditRoleView.as_view(), name='edit-role')
 ]
