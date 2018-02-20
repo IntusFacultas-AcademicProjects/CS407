@@ -5,68 +5,157 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-lg-9">
-        <form class="form-horizontal" style="margin:20px;" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="form_type" value="account_form">
-            {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {% render_field field class+="form-control" %}
-                {% if field.help_text %}
-                <small class="form-text text-muted" >{{ field.help_text }}</small>
-                {% endif %}
+    <div class="col-lg-12">
+        <div class="panel panel-primary">
+            <div class="panel-heading filter-collapsed-bar">
+                <div class="col-lg-10">
+                    <h4>Account Information Area</h4><br>
+                    <span>Account Type: {{ account_type }}</span>
+                </div>
+                <div class="col-lg-2">
+                     <i class="fa fa-chevron-down fa-2x" aria-hidden="true"></i>
+                    <i class="fa fa-chevron-up fa-2x" style="display:none;" aria-hidden="true"></i>
+                </div>
             </div>
-            {% if field.errors|length > 0 %}
-            <div class="form-group">
-                <ul>
-                    {% for error in field.errors %}
-                    <li style="color: red">{{ error }}</li>
-                    {% endfor %}
-                </ul>
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-lg-9">
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="thumbnail">
+                                    <form class="form-horizontal" style="margin:20px;" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_type" value="account_form">
+                                        {% for field in form %}
+                                        <div class="form-group">
+                                            {{ field.label_tag }}
+                                            {% render_field field class+="form-control" %}
+                                            {% if field.help_text %}
+                                            <small class="form-text text-muted" >{{ field.help_text }}</small>
+                                            {% endif %}
+                                        </div>
+                                        {% if field.errors|length > 0 %}
+                                        <div class="form-group">
+                                            <ul>
+                                                {% for error in field.errors %}
+                                                <li style="color: red">{{ error }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                        {% endif %}
+                                        {% endfor %}
+                                        <button class="btn btn-primary" type="submit">Update Information</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="panel panel-danger">
+                                    <div class="panel-heading">
+                                        Danger Area
+                                    </div>
+                                    <div class="panel-body">
+                                         {% comment %}
+                                        <!-- {% url 'app_name:url_name' %} gets replaced with the url that Django has on file with that name -->
+                                        {% endcomment %}
+                                        <form method="post" id="deleteAccount" action="{% url 'audition_management:delete-account' pk=user.id %}">
+                                            <!-- CSRF is to protect against cross site request forgery attacks. This will be translated by
+                                            django into:
+                                            <input type="hidden" name="csrf_token" value="random_string_of_numbers_and_letters_that_only_you_can_have"> -->
+                                            {% csrf_token %}
+                                            <button class="btn btn-danger" type="button" onclick="confirm()">Delete Account</button><br>
+                                            <span>
+                                                This action cannot be undone. Administrators will not be able to recover your account. Think carefully before pressing this button. You will be prompted to confirm your choice.
+                                            </span>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-3">
+                        <div class="thumbnail">
+                             <form class="form-horizontal" style="margin:20px;" method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="change_password_form">
+                                {% for field in change_password_form %}
+                                <div class="form-group">
+                                    {{ field.label_tag }}
+                                    {% render_field field class+="form-control" %}
+                                    {% if field.help_text %}
+                                    <small class="form-text text-muted">{{ field.help_text|safe }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                                {% if field.errors|length > 0 %}
+                                <div class="form-group">
+                                    <ul>
+                                        {% for error in field.errors %}
+                                        <li style="color: red">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                                <button class="btn btn-primary" type="submit">Change Password</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            {% endif %}
-            {% endfor %}
-            <button class="btn btn-primary" type="submit">Update Information</button>
-        </form>
+        </div>
     </div>
-    <div class="col-lg-3">
-         <form class="form-horizontal" style="margin:20px;" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="form_type" value="change_password_form">
-            {% for field in change_password_form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {% render_field field class+="form-control" %}
-                {% if field.help_text %}
-                <small class="form-text text-muted">{{ field.help_text|safe }}
-                </small>
-                {% endif %}
-            </div>
-            {% if field.errors|length > 0 %}
-            <div class="form-group">
-                <ul>
-                    {% for error in field.errors %}
-                    <li style="color: red">{{ error }}</li>
-                    {% endfor %}
-                </ul>
-            </div>
-            {% endif %}
-            {% endfor %}
-            <button class="btn btn-primary" type="submit">Change Password</button>
     </div>
 </div>
 <div>
-    <!-- {% url 'app_name:url_name' %} gets replaced with the url that Django has on file with that name -->
-    <form method="post" action="{% url 'audition_management:delete-account' pk=user.id %}">
-        <!-- CSRF is to protect against cross site request forgery attacks. This will be translated by
-        django into:
-        <input type="hidden" name="csrf_token" value="random_string_of_numbers_and_letters_that_only_you_can_have"> -->
-        {% csrf_token %}
-        <button class="btn btn-danger" type="submit">Delete Account</button>
-    </form>
+   
 </div>
 {% endblock %}
 
 {% block js %}
+<script type="text/javascript">
+    $(".filter-collapsed").click(function () {
+
+        $header = $(".filter-collapsed-bar");
+        $content = $header.next();
+
+        $content.slideToggle(500, function () {
+
+                if ($content.is(":visible")) {
+                        $(".fa-chevron-up").css("display","inline-block");
+                        $(".fa-chevron-down").css("display", "none");
+                }
+                else {
+                        $(".fa-chevron-up").css("display", "none");
+                        $(".fa-chevron-down").css("display","inline-block");
+                }
+
+
+        });
+
+    });
+    confirm = function() {
+        $.confirm({
+                title: 'Warning',
+                closeIcon: true, 
+                content: "This action cannot be undone. Are you positive you want to delete your account?",
+                type: 'red',
+                typeAnimated: true,
+                backgroundDismiss: false,
+                buttons: {
+                    yes: {
+                        text: "Yes",
+                        btnClass: 'btn-red',
+                        action: function() {
+                            $("#deleteAccount").submit()
+                        }
+                    },
+                    no: {
+                        text: 'No',
+                    }
+                }
+            });
+    }
+</script>
 {% endblock js %}

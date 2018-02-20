@@ -86,7 +86,9 @@
                         <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                         </td>
                         <td>(( role.role.address ))</td>
-                        <td><a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a></td>
+                        <td>
+                            <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
+                        </td>
                     </tr>
                 </tbody>
             </table>
@@ -101,6 +103,7 @@
     var unparsed = "{{roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
+        console.log(unparsed)
         parsed = processJS(unparsed)    
          $("#results").floatThead({
             scrollContainer: function($table){
@@ -122,7 +125,7 @@
                 tags: [],
                 displayedRoles: [],
                 allRoles: [],
-                url: "{% url 'audition_management:role' pk=0 %}"
+                url: "{% url 'audition_management:role' pk=0 %}",
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -130,6 +133,7 @@
                 // in order to access the app, we save it to a local variable
                 var internalApp = this;
                 this.allRoles = parsed
+                this.displayedRoles = this.allRoles
                 for (var x = 0; x < parsed.length; x++) {
                     for (var y = 0; y < parsed[x].tags.length; y++) {
                         this.tags.push(parsed[x].tags[y])
@@ -222,6 +226,10 @@
                     filterApp.filterTags = [];
                     filterApp.filterDate = "";
                     filterApp.displayedRoles = filterApp.allRoles;
+                },
+
+                setUrl: function(num) {
+                    return filterApp.url.replace("0", num);
                 }
             },
         })

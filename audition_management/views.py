@@ -61,25 +61,58 @@ class SettingsView(LoginRequiredMixin, View):
                 pass
         return user
 
+    def get_account_type(self, current_user):
+        user = None
+        try:
+            user = current_user.audition_account
+            return "Auditioner"
+        except AuditionAccount.DoesNotExist:
+            try:
+                user = current_user.casting_account
+                return "Casting Agent"
+            except CastingAccount.DoesNotExist:
+                pass
+        return "None"
+
     def get(self, request):
         user = self.get_user(request.user)
+        account_type = self.get_account_type(request.user)
+        is_caster = False
+        events = None
+        if account_type == "Casting Agent":
+            is_caster = True
+            events = user.roles.all()
         form = SettingsForm(instance=request.user)
         change_password_form = PasswordChangeForm(request.user)
         return render(request, 'session/settings.html', {
             'form': form,
             "change_password_form": change_password_form,
+            "account_type": account_type,
+            "is_caster": is_caster
         })
 
     def post(self, request):
         user = self.get_user(request.user)
         if request.POST.get("form_type") == 'account_form':
-            form = SettingsForm(request.POST)
+            form = SettingsForm(request.POST, instance=request.user)
             if form.is_valid():
                 form.save()
-                user.profile.set_password(form.password1)
                 messages.success(request, "Account updated successfully.")
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
+            else:
+                user = self.get_user(request.user)
+                account_type = self.get_account_type(request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                is_caster = False
+                if account_type == "Casting Agent":
+                    is_caster = True
+                return render(request, 'session/settings.html', {
+                    'form': form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_caster": is_caster
+                })
         else:
             form = PasswordChangeForm(request.POST)
             if form.is_valid():
@@ -87,6 +120,20 @@ class SettingsView(LoginRequiredMixin, View):
                 messages.success(request, "Password changed successfully.")
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
+            else:
+                user = self.get_user(request.user)
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                is_caster = False
+                if account_type == "Casting Agent":
+                    is_caster = True
+                return render(request, 'session/settings.html', {
+                    'form': form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_caster": is_caster
+                })
 
 
 class RoleView(LoginRequiredMixin, View):
@@ -94,18 +141,17 @@ class RoleView(LoginRequiredMixin, View):
     def get(self, request, pk):
         dictionary = object
         dates = object
-        if Role.objects.get(id=pk).exists():
+        try:
             role = Role.objects.get(id=pk)
             dictionary = role.as_dict()
             dates = role.dates.all()
-        else:
+        except Role.DoesNotExist:
             dictionary = None
             dates = None
         return render(request, 'audition_management/role.html', {
             "role": dictionary,
             "dates": dates
         })
-
 
 class RoleCreationView(LoginRequiredMixin, View):
 
