@@ -6,33 +6,58 @@
 {% block content %}
 <div class="row">
     <div class="col-lg-offset-1 col-lg-10">
+        <div class="alert alert-dismissible alert-info">
+            Now that you've created your posting, add some tags so that prospective auditioners know what skills you are looking for!
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-offset-1 col-lg-10">
         <div class="panel panel-primary">
             <div class="panel-heading">
-                Create a Posting
+                What skills or attributes do you want your auditioners to have?
             </div>
             <div class="panel-body">
                 <form class="form-horizontal" style="margin:20px;" method="post">
                     <div class="row">
                         <div class="col-lg-12">
                             {% csrf_token %}
-                            {% for field in form %}
-                            <div class="form-group">
-                                {{ field.label_tag }}
-                                {% render_field field class+="form-control" %}
-                                {% if field.help_text %}
-                                <small class="form-text text-muted" >{{ field.help_text }}</small>
-                                {% endif %}
-                            </div>
-                            {% if field.errors|length > 0 %}
-                            <div class="form-group">
-                                <ul>
-                                    {% for error in field.errors %}
-                                    <li style="color: red">{{ error }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                            {% endif %}
-                            {% endfor %}
+                            <table class="table table-striped">
+                                <tbody>
+                                    <tr>
+                                        <th>
+                                            Name
+                                        </th>
+                                        <td>
+                                            {{role.name}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Description
+                                        </th>
+                                        <td>
+                                            {{role.description}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Domain
+                                        </th>
+                                        <td>
+                                            {{role.get_domain_display}}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th>
+                                            Studio Address
+                                        </th>
+                                        <td>
+                                            {{role.studio_address}}
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     <div class="row">
@@ -76,7 +101,7 @@
                         </div>
                     </div>
                     <hr>
-                    <button class="btn btn-primary" type="submit">Create Role</button>
+                    <button class="btn btn-primary" type="submit">Add Tags</button>
                 </form>
             </div>
         </div>
@@ -87,36 +112,12 @@
 
 {% block js %}
 <script type="text/javascript">
-    loopCounter = 0;
     $('.formset_row').formset({
             addText: 'Add Event',
             deleteText: 'Remove',
-            prefix: 'form2',
+            prefix: 'form1',
             addCssClass: 'btn btn-sm btn-primary',
             deleteCssClass: 'btn btn-sm btn-danger',
-            added: function(row) {
-                loopCounter++;
-                // this initializes the bootstrap datetimepicker on a new row
-                var formElements = new Array();
-                $(row).each(function(){
-                    formElements.push($(this).find(':input'));
-                });
-                console.log(formElements)
-                $(formElements[0][3]).datetimepicker({
-                "format": "YYYY-MM-DD HH:mm",
-                "icons": {
-                    "date": "glyphicon glyphicon-time",
-                    "up": "fa fa-arrow-up",
-                    "down": "fa fa-arrow-down"
-                }
-                });
-                $(formElements[0][3]).next().click(function(event) {
-                    $(formElements[0][3]).data("DateTimePicker").show();
-                })
-            },
-            removed: function() {
-                loopCounter--;
-            }
         });
 </script>
 {% endblock js %}

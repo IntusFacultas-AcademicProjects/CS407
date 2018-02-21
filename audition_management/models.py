@@ -72,7 +72,7 @@ class Role(models.Model):
 
 
 class PerformanceEvent(models.Model):
-    date = models.DateField("Date")
+    date = models.DateTimeField("Date")
     name = models.CharField("Name", max_length=128)
     role = models.ForeignKey(Role, on_delete=models.CASCADE,
                              related_name="dates")
@@ -83,7 +83,7 @@ class PerformanceEvent(models.Model):
     def as_dict(self):
         return {
             "event": {
-                "date": '"' + self.date + '"',
+                "date": '"' + str(self.date) + '"',
                 "name": '"' + self.name + '"'
             },
         }

@@ -5,29 +5,80 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-lg-9">
-        <form class="form-horizontal" style="margin:20px;" method="post">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="form-group">
-                {{ field.label_tag }}
-                {% render_field field class+="form-control" %}
-                {% if field.help_text %}
-                <small class="form-text text-muted" >{{ field.help_text }}</small>
-                {% endif %}
+    <div class="col-lg-offset-1 col-lg-10">
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                Edit {{role.name}}
             </div>
-            {% if field.errors|length > 0 %}
-            <div class="form-group">
-                <ul>
-                    {% for error in field.errors %}
-                    <li style="color: red">{{ error }}</li>
-                    {% endfor %}
-                </ul>
+            <div class="panel-body">
+                <form class="form-horizontal" style="margin:20px;" method="post">
+                    <div class='row'>
+                        <div class="col-lg-12">
+                            {% csrf_token %}
+                            {% for field in form %}
+                            <div class="form-group">
+                                {{ field.label_tag }}
+                                {% render_field field class+="form-control" %}
+                                {% if field.help_text %}
+                                <small class="form-text text-muted" >{{ field.help_text }}</small>
+                                {% endif %}
+                            </div>
+                            {% if field.errors|length > 0 %}
+                            <div class="form-group">
+                                <ul>
+                                    {% for error in field.errors %}
+                                    <li style="color: red">{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            {{ formset.management_form }}
+                            <table class="table table-striped">
+                                {% for form in formset %}
+                                    {% if forloop.first %}
+                                        <thead>
+                                        <tr>
+                                            {% for field in form.visible_fields %}
+                                                <th>{{ field.label|capfirst }}</th>
+                                            {% endfor %}
+                                        </tr>
+                                        </thead>
+                                    {% endif %}
+                                    <tr class="{% cycle 'row1' 'row2' %} formset_row">
+                                        {% for field in form.visible_fields %}
+                                            <td>
+                                                {# Include the hidden fields in the form #}
+                                                {% if forloop.first %}
+                                                    {% for hidden in form.hidden_fields %}
+                                                        {{ hidden }}
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {% render_field field class+="form-control" %}
+                                                {% if field.errors|length > 0 %}
+                                                <div class="form-group">
+                                                    <ul>
+                                                        {% for error in field.errors %}
+                                                        <li style="color: red">{{ error }}</li>
+                                                        {% endfor %}
+                                                    </ul>
+                                                </div>
+                                                {% endif %}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            </table>  
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" type="submit">Save Changes</button>
+                </form>
             </div>
-            {% endif %}
-            {% endfor %}
-            <button class="btn btn-primary" type="submit">Edit Role</button>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -36,41 +87,36 @@
 
 {% block js %}
 <script type="text/javascript">
-	var unparsed = "{{role}}"
-	 $(function() {
-	 	unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = JSON.parse(unparsed) 
-
-	    roleApp = new Vue({
-	        el: "#editRoleDiv",
-	        delimiters: ["((","))"],
-	        data: {
-	        	currentRole: "",
-	        	domain: "",
-	        },
-	        mounted: function() {
-	        	this.currentRole = parsed;
-
-	        	//set the domain text for the role
-	        	switch(this.currentRole.role.domain) {
-	        		case 0: this.domain = "General Acting";
-	        			break;
-	        		case 1: this.domain = "Voice Acting";
-	        			break;
-	        		case 2: this.domain = "Stage Acting";
-	        			break;
-	        		case 3: this.domain = "Special Effects";
-	        			break;
-	        		case 4: this.domain = "Stage Crew";
-	        			break;
-	        		case 5: this.domain = "Other";
-	        			break;
-	        	}
-	        },
-	        methods: {
-	        
-	        }
-	    })
-	})
+    loopCounter = 0;
+    $('.formset_row').formset({
+            addText: 'Add Event',
+            deleteText: 'Remove',
+            prefix: 'form2',
+            addCssClass: 'btn btn-sm btn-primary',
+            deleteCssClass: 'btn btn-sm btn-danger',
+            added: function(row) {
+                loopCounter++;
+                // this initializes the bootstrap datetimepicker on a new row
+                var formElements = new Array();
+                $(row).each(function(){
+                    formElements.push($(this).find(':input'));
+                });
+                console.log(formElements)
+                $(formElements[0][3]).datetimepicker({
+                "format": "YYYY-MM-DD HH:mm",
+                "icons": {
+                    "date": "glyphicon glyphicon-time",
+                    "up": "fa fa-arrow-up",
+                    "down": "fa fa-arrow-down"
+                }
+                });
+                $(formElements[0][3]).next().click(function(event) {
+                    $(formElements[0][3]).data("DateTimePicker").show();
+                })
+            },
+            removed: function() {
+                loopCounter--;
+            }
+        });
 </script>
 {% endblock js %}
