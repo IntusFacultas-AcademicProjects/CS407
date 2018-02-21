@@ -14,28 +14,17 @@
                         <div class="col-lg-11">
                             Filter Options
                         </div>
-                        <div class="col-lg-1">
-                            <i class="fa fa-chevron-down fa-2x 2-down" style="display:none;" aria-hidden="true"></i>
-                            <i class="fa fa-chevron-up fa-2x 2-up"  aria-hidden="true"></i>
-                        </div>
                     </div>
                 </div>
                 <div class="panel-body">
                     <div class="form-horizontal">
                         <div class="form-group">
                             <div class="col-lg-6">
-                                <label for="title" class="control-label">Title</label>
-                                <div class="input-group">
-                                    <input id="title" type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
-                                    <div class="input-group-btn">
-                                        <button v-on:click="setFilterText(filterText)" class="btn btn-primary" type="button">
-                                            <i class="glyphicon glyphicon-search"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                <label for="title" class="control-label">Contains Text:</label>
+                                <input id="title" type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
                             </div>
                             <div class="col-lg-6">
-                                <label for="tagSelect" class="control-label">Tags</label>
+                                <label for="tagSelect" class="control-label">Has Tags:</label>
                                  <select class="form-control" style="width:100%" id="tagSelect" multiple>
                                     <option v-for="tag, index in tags" v-bind:value="tag">
                                         (( tag ))
@@ -45,18 +34,32 @@
                         </div>
                         <div class="form-group">
                             <div class="col-lg-6">
-                                <label for="datetimepicker1" class="control-label">Date</label>
+                                <label for="datetimepicker1" class="control-label">Dates After</label>
                                 <div class='input-group date' id='datetimepicker1'>
                                     <input type='text' class="form-control" v-model="filterDate" />
                                     <span class="input-group-addon">
                                         <span class="glyphicon glyphicon-calendar"></span>
                                     </span>
                                 </div>
+                                <small id="emailHelp" class="form-text text-muted">All roles will have a list of events that can be seen by clicking 'View' on a role. Filtering by dates will ensure that all events fall within the requested range</small>
                             </div>
                             <div class="col-lg-6">
                                 {% comment %}
                                  <!-- eventually location filtering will be here -->
                                 {% endcomment %}
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-lg-9">
+                                
+                            </div>
+                            <div class="col-lg-3">
+                                <button v-on:click="resetFilters()" class="btn btn-warning" type="button">
+                                    Reset Filters
+                                </button>
+                                <button v-on:click="combinedFilter()" class="btn btn-primary" type="button">
+                                    Filter
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -135,12 +138,11 @@
                 this.displayedRoles = this.allRoles
                 for (var x = 0; x < parsed.length; x++) {
                     for (var y = 0; y < parsed[x].tags.length; y++) {
-                        this.tags.push(parsed[x].tags[y])
+                        if (!this.tags.includes(parsed[x].tags[y])) {
+                            this.tags.push(parsed[x].tags[y])
+                        }
                     }
                 }
-                $("#tagSelect").on("change", function() {
-                    internalApp.tagFilter($("#tagSelect").val())
-                })
                 $('#datetimepicker1').datetimepicker({
                     "icons": {
                         "date": "glyphicon glyphicon-time",
@@ -148,83 +150,70 @@
                         "down": "fa fa-arrow-down"
                     }
                 });
-                
-                // Eonasdan does not support Vue out of the box, so we use jQuery event handler
-                // catching the custom event from Eonasdan's API. 
-                $('#datetimepicker1').on('dp.change', function() {
-                    // get the date object in MomentJS Date Object format
-                    var momentJSDateObj = $('#datetimepicker1').data('DateTimePicker').date();
-                    //reset the other two filter types so that we only have one type of filter
-                    internalApp.filterText = "";
-                    internalApp.filterTags = [];
-
-                    //temp storage to eventually become the displayedRoles
-                    var filteredRoles = [];
-
-                    //filter the displayed roles based on the filterText
-                    for (i = 0; i < filterApp.allRoles.length; i++) {
-                        if (filterApp.allRoles[i].role.date == momentJSDateObj.format('YYYY-MM-DD')) {
-                            filteredRoles.push(filterApp.allRoles[i]);
-                        }
-                    }
-
-                    //set the displayedRoles to our filtered roles
-                    filterApp.displayedRoles = filteredRoles;
-
-                    // saving it to Vue
-                    internalApp.filterDate = momentJSDateObj.format('YYYY-MM-DD');
-                });
             },
             methods: {
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num)
                 },
-                setFilterText: function(filterText) {
+                combinedFilter: function() {
+                    roles = filterApp.allRoles;
+                    roles = filterApp.setFilterText(roles);
+                    roles = filterApp.tagFilter(roles);
+                    roles = filterApp.dateFilter(roles);
+                    filterApp.displayedRoles = roles;
+                },
+                setFilterText: function(roles) {
                     if (event) {
                         //update the text to filter by
-                        filterApp.filterText = filterText;
-                        console.log(filterApp.filterText);
-
-                        //reset the other two filter types so that we only have one type of filter
-                        filterApp.filterTags = [];
-                        filterApp.filterDate = "";
+                        filterText = $("#title").val();
 
                         //temp storage to eventually become the displayedRoles
                         var filteredRoles = [];
 
                         //filter the displayed roles based on the filterText
-                        for (i = 0; i < filterApp.allRoles.length; i++) {
-                            if (filterApp.allRoles[i].role.name.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
-                                filteredRoles.push(filterApp.allRoles[i]);
-                            }
+                        for (i = 0; i < roles.length; i++) {
+                            if (roles[i].role.name.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
+                                filteredRoles.push(roles[i]);
+                            } 
                         }
 
                         //set the displayedRoles to our filtered roles
-                        filterApp.displayedRoles = filteredRoles;
+                        return filteredRoles;
                     }
                 },
-                tagFilter: function(selected) {
-                    console.log(selected)
+                tagFilter: function(roles) {
+                    selected = $("#tagSelect").val()
                     if (selected.length == 0) {
-                        filterApp.displayedRoles = filterApp.allRoles;
+                        return roles;
                     }
                     else {
-                        filterApp.displayedRoles = filterApp.allRoles.filter(function(role) {
+                        return roles.filter(function(role) {
                             var val = false;
                             for (var x = 0; x < selected.length; x++) {
                                 if (role.tags.indexOf(selected[x]) > -1) {
                                     val = true;
                                 }
                                 else {
-                                    if (val) {
-                                        return false;
-                                    }
+                                    return false;
                                 }
 
                             }
                             return val;
                         })
                     }
+                },
+                dateFilter: function(roles) {
+                    date = $("#datetimepicker1").data('DateTimePicker').date()
+                    return roles.filter(function(role) {
+                        for (var y = 0; y < role.events.length; y++) {
+                            var dateString = role.events[y].event.date.split(" ")[0]
+                            var momentDate = moment(dateString, "YYYY-MM-DD");
+                            if (momentDate > date) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    })
                 },
                 resetFilters: function() {
                     filterApp.filterText = "";

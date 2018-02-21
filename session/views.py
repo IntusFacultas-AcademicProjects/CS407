@@ -26,5 +26,5 @@ def signup(request):
         form = SignUpForm()
         return render(request, 'session/signup.html', {
             'form': form,
-            "is_casting": is_casting_agent(request.user)
+            "is_casting": False
         })
