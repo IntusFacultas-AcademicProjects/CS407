@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from session.forms import SignUpForm
 from audition_management.models import CastingAccount, AuditionAccount
+from audition_management.views import is_casting_agent
 
 
 def signup(request):
@@ -23,4 +24,7 @@ def signup(request):
             return HttpResponseRedirect(reverse('session:login'))
     else:
         form = SignUpForm()
-        return render(request, 'session/signup.html', {'form': form})
+        return render(request, 'session/signup.html', {
+            'form': form,
+            "is_casting": is_casting_agent(request.user)
+        })

@@ -10,28 +10,22 @@
 	        <div class="col-sm-offset-3 col-sm-6">
 	          <div class="panel panel-primary">
 	            <div class="panel-heading" v-model="currentRole">
-	              <h2 class='text-center'> ((currentRole.role.name)) </h2>
+	              <h2 class='text-center'> {{role.name}} </h2>
 	            </div>
 	            <div class="panel-body" v-model="currentRole" v-model="domain">
-	            	<span class="badge badge-info pull-right" v-for="tag, in ((currentRole.tags))">
-	     				((tag))
-	            	</span>
+	            	{% for tag in role.tags.all %}
+		            	<span class="badge badge-info pull-right">
+		     				{{ tag }}
+		            	</span>
+	            	{% endfor %}
 	            	<br>
 	            	<br>
-	            	<h5> Casting Agent: ((currentRole.role.agent))</h5>
-	            	<h5> Role Type: ((domain)) </h5>
-	            	<h5> Studio Address: ((currentRole.role.address))</h5>
+	            	<h5> Casting Agent: {{role.agent}}</h5>
+	            	<h5> Role Type: {{role.get_domain_display}} </h5>
+	            	<h5> Studio Address: {{role.studio_address}}</h5>
 	            	<br>
 	            	<h5> Description</h5>
-	            	<div class="well" style="max-height: 300px; overflow-y:scroll;">((currentRole.role.description))</div>
-	            	<h5> Events</h5>
-	            	<div class="well" style="max-height: 300px; overflow-y:scroll;">
-		            	<ul>
-		            		<li v-for="event, in ((currentRole.events))">
-		     					((event.name)): ((event.date))
-		            		</li>
-		            	</ul>
-		            </div>
+	            	<div class="well" style="max-height: 300px; overflow-y:scroll;">{{role.description}}</div>
 	              	<div class="text-center">
 	                	<button type="submit" class="btn btn-primary text">Schedule Audition</button>
 	              	</div>
@@ -46,42 +40,5 @@
 
 
 {% block js %}
-<script type="text/javascript">
-	var unparsed = "{{role}}"
-	 $(function() {
-	 	unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = JSON.parse(unparsed) 
 
-	    roleApp = new Vue({
-	        el: "#roleDiv",
-	        delimiters: ["((","))"],
-	        data: {
-	        	currentRole: "",
-	        	domain: "",
-	        },
-	        mounted: function() {
-	        	this.currentRole = parsed;
-
-	        	//set the domain text for the role
-	        	switch(this.currentRole.role.domain) {
-	        		case 0: this.domain = "General Acting";
-	        			break;
-	        		case 1: this.domain = "Voice Acting";
-	        			break;
-	        		case 2: this.domain = "Stage Acting";
-	        			break;
-	        		case 3: this.domain = "Special Effects";
-	        			break;
-	        		case 4: this.domain = "Stage Crew";
-	        			break;
-	        		case 5: this.domain = "Other";
-	        			break;
-	        	}
-	        },
-	        methods: {
-	        
-	        }
-	    })
-	})
-</script>
 {% endblock js %}

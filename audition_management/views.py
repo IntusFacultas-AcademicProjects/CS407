@@ -11,8 +11,23 @@ from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
 # Create your views here.
-from audition_management.forms import RoleCreationForm
-from audition_management.forms import EditRoleForm
+from audition_management.forms import (
+    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet)
+
+
+def is_casting_agent(current_user):
+    user = None
+    try:
+        user = current_user.audition_account
+        return False
+    except AuditionAccount.DoesNotExist:
+        try:
+            user = current_user.casting_account
+            return True
+        except CastingAccount.DoesNotExist:
+            pass
+    return False
+
 
 class DashboardView(LoginRequiredMixin, View):
 
@@ -24,7 +39,8 @@ class DashboardView(LoginRequiredMixin, View):
         roles = Role.objects.all()
         dictionaries = [obj.as_dict() for obj in roles]
         return render(request, 'audition_management/dashboard.html', {
-            "roles": dictionaries
+            "roles": dictionaries,
+            "is_casting": is_casting_agent(request.user)
         })
 
 
@@ -76,22 +92,21 @@ class SettingsView(LoginRequiredMixin, View):
     def get(self, request):
         user = self.get_user(request.user)
         account_type = self.get_account_type(request.user)
-        is_caster = False
         events = None
-        if account_type == "Casting Agent":
-            is_caster = True
+        if is_casting_agent(request.user):
             events = user.roles.all()
+            events = [obj.as_dict() for obj in events]
         form = SettingsForm(instance=request.user)
         change_password_form = PasswordChangeForm(request.user)
         return render(request, 'session/settings.html', {
             'form': form,
             "change_password_form": change_password_form,
             "account_type": account_type,
-            "is_caster": is_caster
+            "is_casting": is_casting_agent(request.user),
+            "roles": events
         })
 
     def post(self, request):
-        user = self.get_user(request.user)
         if request.POST.get("form_type") == 'account_form':
             form = SettingsForm(request.POST, instance=request.user)
             if form.is_valid():
@@ -100,17 +115,13 @@ class SettingsView(LoginRequiredMixin, View):
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
             else:
-                user = self.get_user(request.user)
                 account_type = self.get_account_type(request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                is_caster = False
-                if account_type == "Casting Agent":
-                    is_caster = True
                 return render(request, 'session/settings.html', {
                     'form': form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
-                    "is_caster": is_caster
+                    "is_casting": is_casting_agent(request.user)
                 })
         else:
             form = PasswordChangeForm(request.POST)
@@ -120,105 +131,145 @@ class SettingsView(LoginRequiredMixin, View):
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
             else:
-                user = self.get_user(request.user)
                 account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
-                change_password_form = PasswordChangeForm(request.user)
-                is_caster = False
-                if account_type == "Casting Agent":
-                    is_caster = True
                 return render(request, 'session/settings.html', {
                     'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
-                    "is_caster": is_caster
+                    "is_casting": is_casting_agent(request.user)
                 })
 
 
 class RoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
-        dictionary = object
-        dates = object
-        try:
-            role = Role.objects.get(id=pk)
-            dictionary = role.as_dict()
-            dates = role.dates.all()
-        except Role.DoesNotExist:
-            dictionary = None
-            dates = None
+        role = Role.objects.get(id=pk)
         return render(request, 'audition_management/role.html', {
-            "role": dictionary,
-            "dates": dates
+            "role": role,
+            "is_casting": is_casting_agent(request.user)
         })
+
 
 class RoleCreationView(LoginRequiredMixin, View):
 
     def get(self, request):
-        form = RoleCreationForm()
-        return render(
-            request,
-            'audition_management/create.html',
-            {'form': form}
-        )
-
-    def post(self, request):
-        form = RoleCreationForm(request.POST)
-        print(form.name)
-        if form.is_valid():
-            role = Role(
-                name=form.name,
-                description=form.description,
-                domain=form.domain.current(),
-                studio_address=form.studio_address
-            )
-            role.save()
-            return render(request, 'audition_management/role.html', {
-                'role': role.as_dict()
-            })
-        else:
-            return render(
-                request,
-                'audition_management/create.html',
-                {'form': form}
-            )
-class EditRoleView(LoginRequiredMixin, View):
-
-    def get(self, request, pk):
-        form = EditRoleForm()
-        dictionary = object
-        dates = object
-        try:
-            role = Role.objects.get(id=pk)
-            dictionary = role.as_dict()
-            dates = role.dates.all()
-        except Role.DoesNotExist:
-            dictionary = None
-            dates = None
-        return render(request, 'audition_management/editRole.html', {
-            "role": dictionary,
-            "dates": dates,
-            'form': form
+        form = RoleCreationForm(prefix="form1")
+        formset = EventFormSet(prefix="form2")
+        return render(request, 'audition_management/create.html', {
+            'form': form,
+            "formset": formset
         })
 
     def post(self, request):
-        form = EditRoleForm(request.POST)
+        form = RoleCreationForm(request.POST, prefix="form1")
+        role = None
         if form.is_valid():
-            role = Role.objects.get(pk="NEED TO FIGURE THIS OUT")
-            role.name=form.name,
-            role.description=form.description,
-            role.domain=form.domain.current(),
-            role.studio_address=form.studio_address
+            role = form.save(commit=False)
+            role.agent = request.user.casting_account
             role.save()
-            return render(request, 'audition_management/role.html', {
-                'role': role.as_dict()
+        else: 
+            return render(request, 'audition_management/create.html', {
+                'form': form,
+                "formset": formset
+            })
+        formset = EventFormSet(request.POST, prefix="form2")
+        if formset.is_valid() is False:
+            messages.error(
+                request, "Please review the forms and try again.")
+            return render(request, 'audition_management/create.html', {
+                'form': form,
+                "formset": formset
             })
         else:
-            return render(
-                request,
-                'audition_management/EditRole.html',
-                {'form': form}
-            )
+            for form in formset:
+                if form.is_valid():
+                    event = form.save(commit=False)
+                    event.role = role
+                    event.save()
+            messages.success(
+                request, "Role successfully created.")
+            return HttpResponseRedirect(
+                reverse("audition_management:tags", args=[role.id]))
+
+class TagCreationView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+        role = Role.objects.get(pk=pk)
+        formset = TagFormSet(prefix="form1")
+        return render(request, "audition_management/addTags.html", {
+            "role": role,
+            "formset": formset,
+        })
+
+    def post(self, request, pk):
+        role = Role.objects.get(pk=pk)
+        formset = TagFormSet(request.POST, prefix="form1")
+        if formset.is_valid() is False:
+            messages.error(
+                request, "Please review the forms and try again.")
+            return render(request, 'audition_management/addTags.html', {
+                'role': role,
+                "formset": formset
+            })
+        else:
+            for form in formset:
+                if form.is_valid():
+                    tag = form.save(commit=False)
+                    tag.role = role
+                    tag.save()
+            messages.success(
+                request, "Tags successfully added to posting.")
+            return HttpResponseRedirect(reverse("audition_management:settings"))
+
+class EditRoleView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        role = Role.objects.get(pk=pk)
+        form = EditRoleForm(instance=role, prefix="form1")
+        formset = EventFormSet(instance=role, prefix="form2")
+        return render(request, 'audition_management/editRole.html', {
+            'role': role,
+            'form': form,
+            'formset': formset,
+            "is_casting": is_casting_agent(request.user)
+        })
+
+    def post(self, request, pk):
+        role = Role.objects.get(pk=pk)
+        form = EditRoleForm(request.POST, instance=role, prefix="form1")
+        if form.is_valid():
+            role = form.save()
+            formset = EventFormSet(request.POST, instance=role, prefix="form2")
+            for form in formset:
+                if (form.is_valid() and
+                        form.cleaned_data.get('DELETE') is False):
+                    event = form.save(commit=False)
+                    event.role = role
+                    event.save()
+                elif (form.cleaned_data.get('DELETE') is True):
+                    form.cleaned_data.get('id').delete()
+                elif form.is_valid() is False:
+                    role = Role.objects.get(pk=pk)
+                    form = EditRoleForm(instance=role, prefix="form1")
+                    return render(request, 'audition_management/editRole.html', {
+                        'role': role,
+                        'form': form,
+                        'formset': formset,
+                        "is_casting": is_casting_agent(request.user)
+                    })
+            messages.success(request, "Role successfully updated.")
+            return HttpResponseRedirect(
+                reverse("audition_management:edit-role", args=[pk]))
+        else:
+            role = Role.objects.get(pk=pk)
+            formset = EventFormSet(instance=role, prefix="form2")
+            return render(request, 'audition_management/editRole.html', {
+                'role': role,
+                'form': form,
+                'formset': formset,
+                "is_casting": is_casting_agent(request.user)
+            })
+
 
 """
     def similar(a, b):

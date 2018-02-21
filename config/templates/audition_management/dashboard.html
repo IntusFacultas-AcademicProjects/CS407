@@ -6,95 +6,95 @@
 {% block content %}
 <div id="jsonData" "></div>
 <div id="filterDiv">
-<div class = "row">
-    <div class = "col-sm-6">
-        <div class = "panel panel-default">
-            <div class="panel-heading">Filter by Role Title</div>
-            <div class="panel-body">
-                <form id="text-filter">
-                    <div class="input-group">
-                        <input type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
-                        <div class="input-group-btn">
-                            <button v-on:click="setFilterText(filterText)" class="btn btn-primary" type="button">
-                                <i class="glyphicon glyphicon-search"></i>
-                            </button>
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-info">
+                <div class="panel-heading filter-collapsed-bar-2">
+                    <div class="row">
+                        <div class="col-lg-11">
+                            Filter Options
+                        </div>
+                        <div class="col-lg-1">
+                            <i class="fa fa-chevron-down fa-2x 2-down" style="display:none;" aria-hidden="true"></i>
+                            <i class="fa fa-chevron-up fa-2x 2-up"  aria-hidden="true"></i>
                         </div>
                     </div>
-                </form>
-            </div>
-        </div>
-    </div>
-    <div class ="col-sm-6">
-        <div class = "panel panel-default">
-            <div class="panel-heading">Filter by Tag</div>
-            <div class="panel-body">
-                <select class="form-control" style="width:100%" id="tagSelect" multiple>
-                    <option v-for="tag, index in tags" v-bind:value="tag">
-                        (( tag ))
-                    </option>
-                </select>
-            </div>
-        </div>
-    </div>
-</div>
-<div class = "row">
-    <div class = "col-sm-6">
-        <div class = "panel panel-default">
-            <div class="panel-heading">Filter by Date</div>
-            <div class="panel-body">
-                <div class="form-group">
-                    <div class='input-group date' id='datetimepicker1'>
-                        <input type='text' class="form-control" v-model="filterDate" />
-                        <span class="input-group-addon">
-                            <span class="glyphicon glyphicon-calendar"></span>
-                        </span>
+                </div>
+                <div class="panel-body">
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <div class="col-lg-6">
+                                <label for="title" class="control-label">Title</label>
+                                <div class="input-group">
+                                    <input id="title" type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
+                                    <div class="input-group-btn">
+                                        <button v-on:click="setFilterText(filterText)" class="btn btn-primary" type="button">
+                                            <i class="glyphicon glyphicon-search"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <label for="tagSelect" class="control-label">Tags</label>
+                                 <select class="form-control" style="width:100%" id="tagSelect" multiple>
+                                    <option v-for="tag, index in tags" v-bind:value="tag">
+                                        (( tag ))
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-lg-6">
+                                <label for="datetimepicker1" class="control-label">Date</label>
+                                <div class='input-group date' id='datetimepicker1'>
+                                    <input type='text' class="form-control" v-model="filterDate" />
+                                    <span class="input-group-addon">
+                                        <span class="glyphicon glyphicon-calendar"></span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                {% comment %}
+                                 <!-- eventually location filtering will be here -->
+                                {% endcomment %}
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <div class ="col-sm-6">
-        <div class = "panel panel-default">
-            <div class="panel-heading">Filter by Location</div>
-            <div class="panel-body">Yeah IDK bout this one
-                <button v-on:click="resetFilters" class="btn btn-primary pull-right" type="button">
-                        Reset Filters
-                </button>
+    <div class="row">
+        <div class="col-sm-12">
+            <div class='wrapper' style="height: 70%">
+                <table id="roles" class="table table-hover table-striped">
+                    <thead>
+                        <tr style="background-color:white;">
+                            <th>Role</th>
+                            <th>Casting Agent</th>
+                            <th>Date</th>
+                            <th>Tags</th>
+                            <th>Location</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="role in displayedRoles">
+                            <td>(( role.role.name ))</td>
+                            <td>(( role.role.agent ))</td>
+                            <td>(( role.role.date ))</td>
+                            <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
+                            </td>
+                            <td>(( role.role.address ))</td>
+                            <td>
+                                <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-</div>
-<div class="row">
-    <div class="col-sm-12">
-        <div class='wrapper' style="height: 70%">
-            <table id="roles" class="table table-hover table-striped">
-                <thead>
-                    <tr style="background-color:white;">
-                        <th>Role</th>
-                        <th>Casting Agent</th>
-                        <th>Date</th>
-                        <th>Tags</th>
-                        <th>Location</th>
-                        <th>&nbsp;</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="role in displayedRoles">
-                        <td>(( role.role.name ))</td>
-                        <td>(( role.role.agent ))</td>
-                        <td>(( role.role.date ))</td>
-                        <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
-                        </td>
-                        <td>(( role.role.address ))</td>
-                        <td>
-                            <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
 </div>
 {% endblock %}
 
@@ -141,7 +141,13 @@
                 $("#tagSelect").on("change", function() {
                     internalApp.tagFilter($("#tagSelect").val())
                 })
-                $('#datetimepicker1').datetimepicker();
+                $('#datetimepicker1').datetimepicker({
+                    "icons": {
+                        "date": "glyphicon glyphicon-time",
+                        "up": "fa fa-arrow-up",
+                        "down": "fa fa-arrow-down"
+                    }
+                });
                 
                 // Eonasdan does not support Vue out of the box, so we use jQuery event handler
                 // catching the custom event from Eonasdan's API. 
