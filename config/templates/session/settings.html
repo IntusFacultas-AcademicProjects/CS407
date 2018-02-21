@@ -315,7 +315,9 @@
                 this.displayedRoles = this.allRoles
                 for (var x = 0; x < parsed.length; x++) {
                     for (var y = 0; y < parsed[x].tags.length; y++) {
-                        this.tags.push(parsed[x].tags[y])
+                        if (!this.tags.includes(parsed[x].tags[y])) {
+                            this.tags.push(parsed[x].tags[y])
+                        }
                     }
                 }
                 $('#datetimepicker1').datetimepicker({
@@ -331,11 +333,17 @@
                     return filterApp.url.replace("0", num)
                 },
                 combinedFilter: function() {
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.allRoles;
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.setFilterText(roles);
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.tagFilter(roles);
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.dateFilter(roles);
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     filterApp.displayedRoles = roles;
+                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                 },
                 setFilterText: function(roles) {
                     if (event) {
@@ -378,16 +386,26 @@
                     }
                 },
                 dateFilter: function(roles) {
-                    date = $("#datetimepicker1").data('DateTimePicker').date()
+                    date = $("#datetimepicker1").data('DateTimePicker').date();
+                    $('#datetimepicker1').datetimepicker({
+                        date: date
+                    });
+                    if (date == null) {
+                        return roles;
+                    }
                     return roles.filter(function(role) {
+                        var valid = false;
+                        if (role.events.length == 0) {
+                            return false;
+                        }
                         for (var y = 0; y < role.events.length; y++) {
                             var dateString = role.events[y].event.date.split(" ")[0]
                             var momentDate = moment(dateString, "YYYY-MM-DD");
-                            if (momentDate > date) {
-                                return true;
+                            if (momentDate < date) {
+                                return false;
                             }
                         }
-                        return false;
+                        return true;
                     })
                 },
                 resetFilters: function() {
@@ -395,6 +413,7 @@
                     filterApp.filterTags = [];
                     filterApp.filterDate = "";
                     filterApp.displayedRoles = filterApp.allRoles;
+                    $("#tagSelect").val(null).trigger('change');
                 },
 
                 setUrl: function(num) {
