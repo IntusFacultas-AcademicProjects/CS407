@@ -49,7 +49,6 @@ class Role(models.Model):
     agent = models.ForeignKey(CastingAccount, on_delete=models.CASCADE,
                               related_name="roles")
     status = models.IntegerField("Status", choices=STATUS_CHOICES, default=1)
-    date = models.DateField("Date", default=datetime.date.today)
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s, %s" % (self.name, self.description)

@@ -1,5 +1,6 @@
 from django.http import HttpResponseRedirect
 from django.contrib import messages
+from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
@@ -113,9 +114,10 @@ class SettingsView(LoginRequiredMixin, View):
                     "is_caster": is_caster
                 })
         else:
-            form = PasswordChangeForm(request.POST)
+            form = PasswordChangeForm(request.user, request.POST)
             if form.is_valid():
-                form.save()
+                user = form.save()
+                update_session_auth_hash(request, user)
                 messages.success(request, "Password changed successfully.")
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
