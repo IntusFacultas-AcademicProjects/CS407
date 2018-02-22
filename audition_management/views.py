@@ -7,10 +7,11 @@ from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
-from audition_management.models import Role, AuditionAccount, CastingAccount
+from audition_management.models import Role, AuditionAccount, CastingAccount, Tag
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
+import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet)
@@ -238,6 +239,8 @@ class EditRoleView(LoginRequiredMixin, View):
 
     def post(self, request, pk):
         role = Role.objects.get(pk=pk)
+        update_tags = json.loads(request.POST.get("update_tags"))
+        print(update_tags)
         form = EditRoleForm(request.POST, instance=role, prefix="form1")
         if form.is_valid():
             role = form.save()
@@ -259,6 +262,9 @@ class EditRoleView(LoginRequiredMixin, View):
                         'formset': formset,
                         "is_casting": is_casting_agent(request.user)
                     })
+            role.tags.all().delete()
+            for tag in update_tags:
+                Tag.objects.create(name=tag["tag"], role=role)
             messages.success(request, "Role successfully updated.")
             return HttpResponseRedirect(
                 reverse("audition_management:edit-role", args=[pk]))

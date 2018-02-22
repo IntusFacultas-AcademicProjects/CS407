@@ -6,7 +6,9 @@
 .list-complete-enter, .list-complete-leave-active {
   opacity: 0;
 }
-
+.tagToDelete {
+  background-color:red !important;
+}
 .btn-disabled,
 .btn-disabled[disabled] {
   opacity: .4;

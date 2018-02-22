@@ -11,7 +11,7 @@
                 Edit {{role.name}}
             </div>
             <div class="panel-body">
-                <form class="form-horizontal" style="margin:20px;" method="post">
+                <form id="tagEdit" class="form-horizontal" style="margin:20px;" method="post">
                     <div class='row'>
                         <div class="col-lg-12">
                             {% csrf_token %}
@@ -37,6 +37,23 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-12">
+                            <div class="form-group">
+                                <label for="">Tags</label><br>
+                                <span v-for="tag in tags" class="badge badge-success pull-left" v-bind:id="tag.id" style="padding:10px; margin: 2px;">
+                                    ((tag.tag))
+                                    <i style="cursor:pointer" v-on:click="deleteTag(tag.id)" class="fa fa-times-circle"></i>
+                                </span>
+                                <input type="hidden" name="update_tags" value="" id="updatedTags">
+                                <input type="text" class="form-control" v-model="insert" v-on:input="updateTags(event)" v-on:keyup.delete="removeTags()">
+                                <small class="form-text text-muted" >To add new tags, simply write out the tag and put a comma "," at the end to delineate a new tag. To remove tags, you can click the X on the tags above, or continuously hit backspace (the tag to be deleted will be highlighted in red).</small>
+                                
+                            </div>
+                            <hr><br>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <label>Events</label>
                             {{ formset.management_form }}
                             <table class="table table-striped">
                                 {% for form in formset %}
@@ -75,7 +92,7 @@
                             </table>  
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="submit">Save Changes</button>
+                    <button class="btn btn-primary" type="button" v-on:click="subForm">Save Changes</button>
                 </form>
             </div>
         </div>
@@ -117,6 +134,72 @@
             removed: function() {
                 loopCounter--;
             }
-        });
+    });
+    data = [
+        {% for tag in role.tags.all %}
+            { 
+                "tag": "{{tag.name}}", 
+                "id": {{tag.id}},
+            },
+        {% endfor %}
+    ]
+    $(function() {
+        app = new Vue({
+            el: "#tagEdit",
+            delimiters: ["((", "))"],
+            data: {
+                tags: [],
+                insert: "",
+                tagDelete: 0,
+                addedTags: 0,
+            },
+            mounted: function() {
+                this.tags = data;
+            },
+            methods: {
+                updateTags: function(event) {
+                    app.tagDelete = 0;
+                    var id = app.tags[app.tags.length - 1].id
+                    $("#" + id).css("background-color", "")
+                    if (app.insert[app.insert.length - 1] == ",") {
+                        app.tags.push({
+                            "tag": app.insert.substring(0, app.insert.length - 1),
+                            "id": "newId" + app.addedTags++,
+                        })
+                        app.insert = "";
+                    }
+                    else {
+                        // do nothing, typing
+                    }
+                },
+                removeTags: function() {
+                    app.tagDelete +=1;
+                    if (app.insert == "" && app.tagDelete == 2) {
+                        var id = app.tags[app.tags.length - 1].id
+                        $("#" + id).css("background-color", "red")
+                    }
+                    else if (app.insert == "" && app.tagDelete == 3) {
+                        app.tags.splice(app.tags.length - 1, 1);
+                        app.tagDelete = 1;
+                    }
+                },
+                subForm: function() {
+                    $("#updatedTags").val(JSON.stringify(app.tags))
+                    $("#tagEdit").submit();
+                },
+                deleteTag: function(id) {
+                    console.log(id)
+                    for (var x = 0; x < app.tags.length; x++) {
+                        if (app.tags[x].id == id) {
+                            console.log(app.tags[x])
+                            app.tags.splice(x, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+        })
+
+    })
 </script>
 {% endblock js %}
