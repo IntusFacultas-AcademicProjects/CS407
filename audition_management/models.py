@@ -59,7 +59,7 @@ class Role(models.Model):
         tags = [str(obj) for obj in tags]
         return {
             "role": {
-            	"id": self.pk,
+                "id": self.pk,
                 "name": '"' + self.name + '"',
                 "description": '"' + self.description + '"',
                 "domain": self.domain,

@@ -26,6 +26,7 @@ class RoleCreationForm(forms.ModelForm):
             'domain': Select2Widget,
         }
 
+
 class EditRoleForm(forms.ModelForm):
     class Meta:
         model = Role
@@ -34,10 +35,12 @@ class EditRoleForm(forms.ModelForm):
             'domain': Select2Widget,
         }
 
+
 class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ['name']
+
 
 class EventForm(forms.ModelForm):
     class Meta:
@@ -53,6 +56,7 @@ class EventForm(forms.ModelForm):
                 }
             })
         }
+
 
 TagFormSet = forms.inlineformset_factory(
     Role, Tag, extra=1, form=TagForm, can_delete=True)

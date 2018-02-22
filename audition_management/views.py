@@ -18,6 +18,12 @@ from audition_management.forms import (
 
 
 def is_casting_agent(current_user):
+    """
+    Returns true if the user has a casting agent account,
+    Returns false otherwise.
+
+    Errors if the user has no account.
+    """
     user = None
     try:
         user = current_user.audition_account
@@ -33,13 +39,14 @@ def is_casting_agent(current_user):
 
 class DashboardView(LoginRequiredMixin, View):
 
-    def handle_request(self, request):
-        if request.GET:
-            return DashboardView.get(request)
-
     def get(self, request):
+        # grabs all roles and returns them in JSON format for the SPA Framework
+        # to use
         roles = Role.objects.all()
         dictionaries = [obj.as_dict() for obj in roles]
+        # Later, these roles will be filtered and ordered based on a number
+        # of factors, the rough algorithm for which is found at the bottom of
+        # the page.
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries,
             "is_casting": is_casting_agent(request.user)
@@ -49,6 +56,8 @@ class DashboardView(LoginRequiredMixin, View):
 class AccountDelete(LoginRequiredMixin, View):
     def post(self, request, pk):
         user = User.objects.get(pk=pk)
+        # only the user can delete his account. This is to protect from
+        # malicious attacks
         if request.user != user:
             messages.error(request, "You cannot delete this account.")
             return HttpResponseRedirect(
@@ -60,12 +69,6 @@ class AccountDelete(LoginRequiredMixin, View):
 
 
 class SettingsView(LoginRequiredMixin, View):
-
-    def handle_request(self, request):
-        if request.GET:
-            return SettingsView.get(request)
-        else:
-            return SettingsView.post(request)
 
     def get_user(self, current_user):
         user = None
@@ -79,6 +82,7 @@ class SettingsView(LoginRequiredMixin, View):
         return user
 
     def get_account_type(self, current_user):
+        # this is for displaying to the user what account type they have
         user = None
         try:
             user = current_user.audition_account
@@ -96,9 +100,12 @@ class SettingsView(LoginRequiredMixin, View):
         account_type = self.get_account_type(request.user)
         events = None
         if is_casting_agent(request.user):
+            # grab all events made by the user
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
+        # this form is used to modify account settings that aren't passwords
         form = SettingsForm(instance=request.user)
+        # this is a Django Password Modification form
         change_password_form = PasswordChangeForm(request.user)
         return render(request, 'session/settings.html', {
             'form': form,
@@ -109,6 +116,7 @@ class SettingsView(LoginRequiredMixin, View):
         })
 
     def post(self, request):
+        # form_type is used to tell which form was submitted.
         if request.POST.get("form_type") == 'account_form':
             form = SettingsForm(request.POST, instance=request.user)
             if form.is_valid():
@@ -117,6 +125,8 @@ class SettingsView(LoginRequiredMixin, View):
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
             else:
+                # if the form isn't valid, we return the form with errors to
+                # the user
                 account_type = self.get_account_type(request.user)
                 change_password_form = PasswordChangeForm(request.user)
                 return render(request, 'session/settings.html', {
@@ -157,6 +167,7 @@ class RoleView(LoginRequiredMixin, View):
 class RoleCreationView(LoginRequiredMixin, View):
 
     def get(self, request):
+        # prefixs are used to differentiate which forms are which on submit
         form = RoleCreationForm(prefix="form1")
         formset = EventFormSet(prefix="form2")
         return render(request, 'audition_management/create.html', {
@@ -171,7 +182,7 @@ class RoleCreationView(LoginRequiredMixin, View):
             role = form.save(commit=False)
             role.agent = request.user.casting_account
             role.save()
-        else: 
+        else:
             return render(request, 'audition_management/create.html', {
                 'form': form,
                 "formset": formset
@@ -195,8 +206,10 @@ class RoleCreationView(LoginRequiredMixin, View):
             return HttpResponseRedirect(
                 reverse("audition_management:tags", args=[role.id]))
 
+
 class TagCreationView(LoginRequiredMixin, View):
     def get(self, request, pk):
+        # after role creation, tags must be added.
         role = Role.objects.get(pk=pk)
         formset = TagFormSet(prefix="form1")
         return render(request, "audition_management/addTags.html", {
@@ -224,6 +237,7 @@ class TagCreationView(LoginRequiredMixin, View):
                 request, "Tags successfully added to posting.")
             return HttpResponseRedirect(reverse("audition_management:settings"))
 
+
 class EditRoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
@@ -245,11 +259,15 @@ class EditRoleView(LoginRequiredMixin, View):
             role = form.save()
             formset = EventFormSet(request.POST, instance=role, prefix="form2")
             for form in formset:
+                # if the form is valid and hasn't been marked to be deleted, we
+                # create the event.
                 if (form.is_valid() and
                         form.cleaned_data.get('DELETE') is False):
                     event = form.save(commit=False)
                     event.role = role
                     event.save()
+                # if the form is valid and has been marked for deletion, we
+                # delete the form without creating the event.
                 elif (form.cleaned_data.get('DELETE') is True):
                     form.cleaned_data.get('id').delete()
                 elif form.is_valid() is False:
@@ -261,6 +279,7 @@ class EditRoleView(LoginRequiredMixin, View):
                         'formset': formset,
                         "is_casting": is_casting_agent(request.user)
                     })
+            # tags do not need to be preserved, so we nuke and readd
             role.tags.all().delete()
             for tag in update_tags:
                 Tag.objects.create(name=tag["tag"], role=role)

@@ -313,6 +313,7 @@
                 var internalApp = this;
                 this.allRoles = parsed
                 this.displayedRoles = this.allRoles
+                // populate the tags array with unique tags only
                 for (var x = 0; x < parsed.length; x++) {
                     for (var y = 0; y < parsed[x].tags.length; y++) {
                         if (!this.tags.includes(parsed[x].tags[y])) {
@@ -333,19 +334,15 @@
                     return filterApp.url.replace("0", num)
                 },
                 combinedFilter: function() {
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
+                    // filter by all available data
                     roles = filterApp.allRoles;
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.setFilterText(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.tagFilter(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.dateFilter(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     filterApp.displayedRoles = roles;
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                 },
                 setFilterText: function(roles) {
+                    // filter by text (this filters by case-insensitive name)
                     if (event) {
                         //update the text to filter by
                         filterText = $("#title").val();
@@ -365,6 +362,7 @@
                     }
                 },
                 tagFilter: function(roles) {
+                    // filter by tags (all tags provided must be present)
                     selected = $("#tagSelect").val()
                     if (selected.length == 0) {
                         return roles;
@@ -386,6 +384,7 @@
                     }
                 },
                 dateFilter: function(roles) {
+                    // filters by date (all events must occur after the provided date)
                     date = $("#datetimepicker1").data('DateTimePicker').date();
                     $('#datetimepicker1').datetimepicker({
                         date: date
