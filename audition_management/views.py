@@ -279,6 +279,7 @@ class EditRoleView(LoginRequiredMixin, View):
 
 
 """
+    This will be used in sprint 2
     def similar(a, b):
         return SequenceMatcher(None, a, b).ratio()
 
