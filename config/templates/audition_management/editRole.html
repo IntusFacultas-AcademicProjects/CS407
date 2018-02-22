@@ -105,36 +105,7 @@
 {% block js %}
 <script type="text/javascript">
     loopCounter = 0;
-    $('.formset_row').formset({
-            addText: 'Add Event',
-            deleteText: 'Remove',
-            prefix: 'form2',
-            addCssClass: 'btn btn-sm btn-primary',
-            deleteCssClass: 'btn btn-sm btn-danger',
-            added: function(row) {
-                loopCounter++;
-                // this initializes the bootstrap datetimepicker on a new row
-                var formElements = new Array();
-                $(row).each(function(){
-                    formElements.push($(this).find(':input'));
-                });
-                console.log(formElements)
-                $(formElements[0][3]).datetimepicker({
-                "format": "YYYY-MM-DD HH:mm",
-                "icons": {
-                    "date": "glyphicon glyphicon-time",
-                    "up": "fa fa-arrow-up",
-                    "down": "fa fa-arrow-down"
-                }
-                });
-                $(formElements[0][3]).next().click(function(event) {
-                    $(formElements[0][3]).data("DateTimePicker").show();
-                })
-            },
-            removed: function() {
-                loopCounter--;
-            }
-    });
+    
     data = [
         {% for tag in role.tags.all %}
             { 
@@ -144,6 +115,38 @@
         {% endfor %}
     ]
     $(function() {
+        setTimeout(function() {
+            $('.formset_row').formset({
+                    addText: 'Add Event',
+                    deleteText: 'Remove',
+                    prefix: 'form2',
+                    addCssClass: 'btn btn-sm btn-primary',
+                    deleteCssClass: 'btn btn-sm btn-danger',
+                    added: function(row) {
+                        loopCounter++;
+                        // this initializes the bootstrap datetimepicker on a new row
+                        var formElements = new Array();
+                        $(row).each(function(){
+                            formElements.push($(this).find(':input'));
+                        });
+                        console.log(formElements)
+                        $(formElements[0][3]).datetimepicker({
+                        "format": "YYYY-MM-DD HH:mm",
+                        "icons": {
+                            "date": "glyphicon glyphicon-time",
+                            "up": "fa fa-arrow-up",
+                            "down": "fa fa-arrow-down"
+                        }
+                        });
+                        $(formElements[0][3]).next().click(function(event) {
+                            $(formElements[0][3]).data("DateTimePicker").show();
+                        })
+                    },
+                    removed: function() {
+                        loopCounter--;
+                    }
+            });
+        }, 100);
         app = new Vue({
             el: "#tagEdit",
             delimiters: ["((", "))"],

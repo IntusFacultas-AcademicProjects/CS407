@@ -240,7 +240,6 @@ class EditRoleView(LoginRequiredMixin, View):
     def post(self, request, pk):
         role = Role.objects.get(pk=pk)
         update_tags = json.loads(request.POST.get("update_tags"))
-        print(update_tags)
         form = EditRoleForm(request.POST, instance=role, prefix="form1")
         if form.is_valid():
             role = form.save()
