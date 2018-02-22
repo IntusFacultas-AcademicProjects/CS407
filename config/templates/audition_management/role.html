@@ -7,30 +7,118 @@
 <div id="roleDiv">
 	<div class = "container-fluid">
 	      <div class="row">
-	        <div class="col-sm-offset-3 col-sm-6">
+	        <div class="col-sm-6">
 	          <div class="panel panel-primary">
-	            <div class="panel-heading" v-model="currentRole">
+	            <div class="panel-heading">
 	              <h2 class='text-center'> {{role.name}} </h2>
 	            </div>
-	            <div class="panel-body" v-model="currentRole" v-model="domain">
-	            	{% for tag in role.tags.all %}
-		            	<span class="badge badge-info pull-right">
-		     				{{ tag }}
-		            	</span>
-	            	{% endfor %}
-	            	<br>
-	            	<br>
-	            	<h5> Casting Agent: {{role.agent}}</h5>
-	            	<h5> Role Type: {{role.get_domain_display}} </h5>
-	            	<h5> Studio Address: {{role.studio_address}}</h5>
-	            	<br>
-	            	<h5> Description</h5>
-	            	<div class="well" style="max-height: 300px; overflow-y:scroll;">{{role.description}}</div>
+	            <div class="panel-body">
+	            	<table class="table">
+	            		<thead>
+	            			<tr>
+	            				<th>Role Tags</th>
+	            			</tr>
+	            		</thead>
+	            		<tbody>
+	            			<td>
+				            	{% for tag in role.tags.all %}
+					            	<span class="badge badge-info pull-left" style="margin:2px;">
+					     				{{ tag }}
+					            	</span>
+				            	{% endfor %}
+	            			</td>
+	            		</tbody>
+	            	</table>
+	            	<hr><br>
+	            	<table class="table table-striped">
+	            		<thead>
+	            			<tr>
+	            				<th colspan="2">Role Details</th>
+	            			</tr>
+	            		</thead>
+	            		<tbody>
+	            			<tr>
+	            				<th>Casting Agent:</th>
+	            				<td>{{role.agent}}</td>
+	            			</tr>
+	            			<tr>
+	            				<th>Role Type:</th>
+	            				<td>{{role.get_domain_display}}</td>
+	            			</tr>
+	            			<tr>
+	            				<th>Studio Address:</th>
+	            				<td>{{role.studio_address}}</td>
+	            			</tr>
+	            			<tr>
+	            				<th>Description:</th>
+	            				<td>
+	            					<div class="well" style="max-height: 300px; overflow-y:scroll;">
+	            						{{role.description}}
+	            					</div>
+	            				</td>
+	            			</tr>
+	            		</tbody>
+	            	</table>
+	            	<hr><br>
+	            	<table class="table table-striped">
+	            		<thead>
+	            			<tr>
+	            				<th colspan="2">Casting Agent Information</th>
+	            			</tr>
+	            		</thead>
+	            		<tbody>
+	            			<tr>
+	            				<th>Name</th>
+	            				<td>{{role.agent.profile.first_name}} {{role.agent.profile.last_name}}</td>
+	            			</tr>
+	            			<tr>
+	            				<th>Email</th>
+	            				<td>{{role.agent.profile.email}}</td>
+	            			</tr>
+	            		</tbody>
+	            	</table>
 	              	<div class="text-center">
 	                	<button type="submit" class="btn btn-primary text">Schedule Audition</button>
 	              	</div>
 	            </div>
 	          </div>
+	        </div>
+	        <div class="col-sm-6">
+	        	<div class="panel panel-primary">
+		            <div class="panel-heading">
+		              <h2 class='text-center'> Important Dates </h2>
+		            </div>
+		            <div class="panel-body" style="height:748px;">
+		            	<div class="row">
+		            		<div class="col-lg-12">
+		            			<div class='wrapper' style="height: 70%">
+					            	<table id="events" class="table table-striped">
+					            		<thead>
+					            			<tr>
+					            				<th>Event Name</th>
+					            				<th>Event Date</th>
+					            			</tr>
+					            		</thead>
+					            		<tbody>
+					            			{% for event in role.dates.all %}
+					            			<tr>
+					            				<td>{{event.name}}</td>
+					            				<td>{{event.date}}</td>
+					            			</tr>
+					            			{% empty %}
+					            				<tr>
+					            					<td colspan="2" style="text-align:center">
+					            						No events have been added for this posting. Contact the agent.
+					            					</td>
+					            				</tr>
+					            			{% endfor %}
+					            		</tbody>
+					            	</table>
+		            			</div>
+		            		</div>
+		            	</div>
+		            </div>
+		        </div>
 	        </div>
 	      </div>
 	  </div>
@@ -40,5 +128,11 @@
 
 
 {% block js %}
-
+<script type="text/javascript">
+	$("#events").floatThead({
+        scrollContainer: function($table){
+            return $table.closest('.wrapper');
+        }
+    });
+</script>
 {% endblock js %}
