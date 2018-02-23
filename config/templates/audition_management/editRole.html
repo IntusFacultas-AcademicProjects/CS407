@@ -92,7 +92,7 @@
                             </table>  
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="button" v-on:click="subForm">Save Changes</button>
+                    <button id="submitForm" class="btn btn-primary" type="button" v-on:click="subForm">Save Changes</button>
                 </form>
             </div>
         </div>
@@ -165,8 +165,10 @@
                     // this fires on input, if the comma delineator is found,
                     // it creates a tag and deletes the text
                     app.tagDelete = 0;
-                    var id = app.tags[app.tags.length - 1].id
-                    $("#" + id).css("background-color", "")
+                    if (app.tags.length > 0) {
+                        var id = app.tags[app.tags.length - 1].id
+                        $("#" + id).css("background-color", "")
+                    }
                     if (app.insert[app.insert.length - 1] == ",") {
                         app.tags.push({
                             "tag": app.insert.substring(0, app.insert.length - 1),
@@ -192,6 +194,7 @@
                     }
                 },
                 subForm: function() {
+                    $("#submitForm").prop('disabled',true);
                     $("#updatedTags").val(JSON.stringify(app.tags))
                     $("#tagEdit").submit();
                 },
