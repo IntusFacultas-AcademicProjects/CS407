@@ -148,7 +148,7 @@ class SettingsView(LoginRequiredMixin, View):
                 account_form = SettingsForm(instance=request.user)
                 return render(request, 'session/settings.html', {
                     'form': account_form,
-                    "change_password_form": change_password_form,
+                    "change_password_form": form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user)
                 })
@@ -162,6 +162,10 @@ class RoleView(LoginRequiredMixin, View):
             "role": role,
             "is_casting": is_casting_agent(request.user)
         })
+
+    def post(self, _, pk):
+        Role.objects.filter(id=pk).delete()
+        return HttpResponseRedirect(reverse(DashboardView))
 
 
 class RoleCreationView(LoginRequiredMixin, View):
