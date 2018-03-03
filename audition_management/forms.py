@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from audition_management.models import Role, PerformanceEvent, Tag
+from audition_management.models import AuditionAccount, Skill, PastWork, Role, PerformanceEvent, Tag
 from audition_management.models import CastingAccount
 from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
@@ -16,6 +16,16 @@ class SettingsForm(forms.ModelForm):
         fields = ('username', 'first_name', 'last_name', 'email')
 
     # TODO validate better
+
+class SkillsForm(forms.ModelForm):
+    class Meta:
+        model = Skill
+        fields = ['name']
+
+class PortfolioForm(forms.ModelForm):
+    class Meta:
+        model = PastWork
+        fields = ['name']
 
 
 class RoleCreationForm(forms.ModelForm):
@@ -54,6 +64,10 @@ class EventForm(forms.ModelForm):
             })
         }
 
+SkillsFormSet = forms.inlineformset_factory(
+    AuditionAccount, Skill, extra=1, form=SkillsForm, can_delete=True)
+PortfolioFormSet = forms.inlineformset_factory(
+    AuditionAccount, PastWork, extra=1, form=PortfolioForm, can_delete=True)
 TagFormSet = forms.inlineformset_factory(
     Role, Tag, extra=1, form=TagForm, can_delete=True)
 EventFormSet = forms.inlineformset_factory(

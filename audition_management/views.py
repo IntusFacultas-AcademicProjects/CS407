@@ -14,7 +14,7 @@ from nltk.corpus import wordnet
 import json
 # Create your views here.
 from audition_management.forms import (
-    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet)
+    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet, SkillsFormSet, PortfolioFormSet)
 
 
 def is_casting_agent(current_user):
@@ -98,15 +98,28 @@ class SettingsView(LoginRequiredMixin, View):
         if is_casting_agent(request.user):
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
+        else:
+            skillsformset = SkillsFormSet(prefix="form1")
+            portfolioformset = PortfolioFormSet(prefix="form1")
         form = SettingsForm(instance=request.user)
         change_password_form = PasswordChangeForm(request.user)
-        return render(request, 'session/settings.html', {
-            'form': form,
-            "change_password_form": change_password_form,
-            "account_type": account_type,
-            "is_casting": is_casting_agent(request.user),
-            "roles": events
-        })
+        if is_casting_agent(request.user):
+            return render(request, 'session/settings.html', {
+                'form': form,
+                "change_password_form": change_password_form,
+                "account_type": account_type,
+                "is_casting": is_casting_agent(request.user),
+                "roles": events
+            })
+        else:
+            return render(request, 'session/settings.html', {
+                'form': form,
+                "change_password_form": change_password_form,
+                "account_type": account_type,
+                "is_casting": is_casting_agent(request.user),
+                "skill_form_set": skillsformset,
+                "portfolio_form_set": portfolioformset
+            })
 
     def post(self, request):
         if request.POST.get("form_type") == 'account_form':
