@@ -12,6 +12,11 @@
                     <a class="nav-link" style="cursor:pointer" href="{% url 'audition_management:create' %}">Create Posting</a>
                 </li>
                 {% endif %}
+                {% if is_audition %}
+                <li class="nav-item">
+                    <a class="nav-link" style="cursor:pointer" href="{% url 'audition_management:audition-profile' pk=user.id %}">View Profile</a>
+                </li>
+                {% endif %}
                 <li class="nav-item dropdown btn-group">
                     <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {% if user.is_authenticated %} Hello {% endif %} {{ user.first_name }} <i style="margin-left: 5px" class="fa fa-cog fa-lg" aria-hidden="true"></i>

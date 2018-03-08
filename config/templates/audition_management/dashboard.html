@@ -84,7 +84,7 @@
                     <tbody>
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
-                            <td>(( role.role.agent ))</td>
+                            <td> <a v-bind:href="setAgentUrl(role.role.agent.id)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
                             <td>(( role.role.date ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
@@ -104,6 +104,8 @@
 {% block js %}
 <script type="text/javascript">
     var unparsed = "{{roles}}"
+    //var uniqueAgents = {{uniqueAgents}};
+    //console.log(uniqueAgents);
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
         parsed = processJS(unparsed)    
@@ -128,6 +130,7 @@
                 displayedRoles: [],
                 allRoles: [],
                 url: "{% url 'audition_management:role' pk=0 %}",
+                agentUrl: "{% url 'audition_management:casting-profile' pk=0 %}"
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -239,6 +242,10 @@
                     $("#tagSelect").val(null).trigger('change');
                 },
                 setUrl: function(num) {
+                    return filterApp.url.replace("0", num);
+                },
+
+                setAgentUrl: function(num) {
                     return filterApp.url.replace("0", num);
                 }
             },

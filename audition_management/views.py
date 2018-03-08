@@ -36,20 +36,52 @@ def is_casting_agent(current_user):
             pass
     return False
 
+def is_audition_agent(current_user):
+    """
+    Returns true if the user has a audition_account account,
+    Returns false otherwise.
+
+    Errors if the user has no account.
+    """
+    user = None
+    try:
+        user = current_user.casting_account
+        return False
+    except CastingAccount.DoesNotExist:
+        try:
+            user = current_user.audition_account
+            return True
+        except AuditionAccount.DoesNotExist:
+            pass
+    return False
+
+
 
 class DashboardView(LoginRequiredMixin, View):
 
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
-        roles = Role.objects.all()
+        roles = Role.objects.filter(status = 1)
+
+        #get unique agents for creating url to casting agent profiles
+        uniqueAgents = []
+        for r in roles:
+            if r.agent not in uniqueAgents:
+                uniqueAgents.append(r.agent)
+
+        print(uniqueAgents)
+
         dictionaries = [obj.as_dict() for obj in roles]
+        
         # Later, these roles will be filtered and ordered based on a number
         # of factors, the rough algorithm for which is found at the bottom of
         # the page.
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries,
-            "is_casting": is_casting_agent(request.user)
+            "is_casting": is_casting_agent(request.user),
+            "is_audition": is_audition_agent(request.user),
+            "uniqueAgents": uniqueAgents
         })
 
 
@@ -112,6 +144,7 @@ class SettingsView(LoginRequiredMixin, View):
             "change_password_form": change_password_form,
             "account_type": account_type,
             "is_casting": is_casting_agent(request.user),
+            "is_audition": is_audition_agent(request.user),
             "roles": events
         })
 
@@ -157,10 +190,19 @@ class SettingsView(LoginRequiredMixin, View):
 class RoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
+        user = request.user
         role = Role.objects.get(id=pk)
+        managingRole = False
+
+        #find out if the current role was created by the current user
+        if (is_casting_agent(user) and role.agent.id == user.id):
+            managingRole = True
+
         return render(request, 'audition_management/role.html', {
             "role": role,
-            "is_casting": is_casting_agent(request.user)
+            "is_casting": is_casting_agent(request.user),
+            "is_audition": is_audition_agent(request.user),
+            "managingRole": managingRole
         })
 
 
@@ -244,6 +286,8 @@ class EditRoleView(LoginRequiredMixin, View):
         role = Role.objects.get(pk=pk)
         form = EditRoleForm(instance=role, prefix="form1")
         formset = EventFormSet(instance=role, prefix="form2")
+
+
         return render(request, 'audition_management/editRole.html', {
             'role': role,
             'form': form,
@@ -296,6 +340,30 @@ class EditRoleView(LoginRequiredMixin, View):
                 "is_casting": is_casting_agent(request.user)
             })
 
+class AuditionProfileView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        user = User.objects.get(pk=pk)
+        is_own_profile = False;
+
+        #if the current user is visiting their own profile
+        if (str(request.user.id) == pk):
+            is_own_profile = True;
+
+        return render(request, 'audition_management/auditionProfile.html', {
+            "is_audition": is_audition_agent(request.user),
+            "is_own_profile": is_own_profile,
+            'user': user
+        })
+
+class CastingProfileView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        user = User.objects.get(pk=pk)
+        print(user)
+        return render(request, 'audition_management/castingProfile.html', {
+            "user": user
+        })
 
 """
     This will be used in sprint 2

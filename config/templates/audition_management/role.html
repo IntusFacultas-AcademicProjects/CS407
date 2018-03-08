@@ -57,6 +57,10 @@
 	            					</div>
 	            				</td>
 	            			</tr>
+	            			<tr>
+	            				<th>Status:</th>
+	            				<td>{{role.get_status_display}}</td>
+	            			</tr>
 	            		</tbody>
 	            	</table>
 	            	<hr><br>
@@ -77,9 +81,16 @@
 	            			</tr>
 	            		</tbody>
 	            	</table>
-	              	<div class="text-center">
-	                	<button type="submit" class="btn btn-primary text">Schedule Audition</button>
-	              	</div>
+	            	{% if is_audition %}
+		              	<div class="text-center">
+		                	<button type="submit" class="btn btn-primary text">Schedule Audition</button>
+		              	</div>
+		            {% endif %}
+		            {% if managingRole %}
+		            	<div class="text-center">
+		                	<button type="submit" class="btn btn-danger text">Delete Role</button>
+		              	</div>
+		            {% endif %}
 	            </div>
 	          </div>
 	        </div>

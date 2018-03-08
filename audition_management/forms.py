@@ -30,9 +30,10 @@ class RoleCreationForm(forms.ModelForm):
 class EditRoleForm(forms.ModelForm):
     class Meta:
         model = Role
-        fields = ('name', 'description', 'domain', 'studio_address')
+        fields = ('name', 'description', 'domain', 'studio_address', 'status')
         widgets = {
             'domain': Select2Widget,
+            'status': Select2Widget
         }
 
 
