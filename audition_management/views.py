@@ -138,6 +138,47 @@ class SettingsView(LoginRequiredMixin, View):
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user)
                 })
+        elif request.POST.get("form_type") == 'skill_form_set':
+            form = SkillsFormSet(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                skillsformset = SkillsFormSet(prefix="form1")
+                portfolioformset = PortfolioFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "skill_form_set": form,
+                    "portfolio_form_set": portfolioformset
+                })
+        elif request.POST.get("form_type") == 'portfolio_form_set':
+            form = SkillsFormSet(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                skillsformset = SkillsFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "skill_form_set": skillsformset,
+                    "portfolio_form_set": form
+                })
         else:
             form = PasswordChangeForm(request.user, request.POST)
             if form.is_valid():
@@ -151,7 +192,7 @@ class SettingsView(LoginRequiredMixin, View):
                 account_form = SettingsForm(instance=request.user)
                 return render(request, 'session/settings.html', {
                     'form': account_form,
-                    "change_password_form": change_password_form,
+                    "change_password_form": form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user)
                 })
