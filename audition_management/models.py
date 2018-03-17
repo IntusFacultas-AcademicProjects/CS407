@@ -109,20 +109,6 @@ class Tag(models.Model):
     def __str__(self):
         return self.name
 
-class Skill(models.Model):
-    name = models.CharField("Name", max_length=128)
-    account = models.ForeignKey(
-        AuditionAccount,
-        on_delete=models.CASCADE,
-        related_name="skills",
-        blank=True,
-        null=True,
-    )
-
-    def __str__(self):
-        return self.name
-
-
 class PastWork(models.Model):
     name = models.CharField("Name", max_length=128)
     account = models.ForeignKey(

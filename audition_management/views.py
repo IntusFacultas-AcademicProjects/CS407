@@ -14,7 +14,7 @@ from nltk.corpus import wordnet
 import json
 # Create your views here.
 from audition_management.forms import (
-    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet, SkillsFormSet, PortfolioFormSet)
+    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
 
 
 def is_casting_agent(current_user):
@@ -99,7 +99,7 @@ class SettingsView(LoginRequiredMixin, View):
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
         else:
-            skillsformset = SkillsFormSet(prefix="form1")
+            tagformset = ProfileTagFormSet(prefix="form1")
             portfolioformset = PortfolioFormSet(prefix="form1")
         form = SettingsForm(instance=request.user)
         change_password_form = PasswordChangeForm(request.user)
@@ -117,7 +117,7 @@ class SettingsView(LoginRequiredMixin, View):
                 "change_password_form": change_password_form,
                 "account_type": account_type,
                 "is_casting": is_casting_agent(request.user),
-                "skill_form_set": skillsformset,
+                "skill_form_set": tagformset,
                 "portfolio_form_set": portfolioformset
             })
 
@@ -138,46 +138,53 @@ class SettingsView(LoginRequiredMixin, View):
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user)
                 })
-        elif request.POST.get("form_type") == 'skill_form_set':
-            form = SkillsFormSet(request.POST, instance=request.user)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Account updated successfully.")
-                return HttpResponseRedirect(
-                    reverse("audition_management:settings"))
+        elif request.POST.get("form_type") == 'tag_form_set':
+            formset = ProfileTagFormSet(request.POST, prefix="form1")
+            if formset.is_valid():
+                for form in formset:
+                    if form.is_valid():
+                        tag = form.save(commit=False)
+                        tag.account = request.user
+                        tag.save()
+                messages.success(
+                    request, "Tags successfully added to posting.")
+                return HttpResponseRedirect(reverse("audition_management:settings"))
             else:
                 account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                skillsformset = SkillsFormSet(prefix="form1")
                 portfolioformset = PortfolioFormSet(prefix="form1")
                 return render(request, 'session/settings.html', {
                     'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user),
-                    "skill_form_set": form,
+                    "skill_form_set": formset,
                     "portfolio_form_set": portfolioformset
                 })
         elif request.POST.get("form_type") == 'portfolio_form_set':
-            form = SkillsFormSet(request.POST, instance=request.user)
-            if form.is_valid():
-                form.save()
-                messages.success(request, "Account updated successfully.")
-                return HttpResponseRedirect(
-                    reverse("audition_management:settings"))
+            formset = PortfolioFormSet(request.POST, prefix="form1")
+            if formset.is_valid():
+                for form in formset:
+                    if form.is_valid():
+                        pastwork = form.save(commit=False)
+                        pastwork.account = request.user
+                        pastwork.save()
+                messages.success(
+                    request, "Tags successfully added to posting.")
+                return HttpResponseRedirect(reverse("audition_management:settings"))
             else:
                 account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                skillsformset = SkillsFormSet(prefix="form1")
+                skillsformset = ProfileTagFormSet(prefix="form1")
                 return render(request, 'session/settings.html', {
                     'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user),
                     "skill_form_set": skillsformset,
-                    "portfolio_form_set": form
+                    "portfolio_form_set": formset
                 })
         else:
             form = PasswordChangeForm(request.user, request.POST)
