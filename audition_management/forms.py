@@ -17,6 +17,11 @@ class SettingsForm(forms.ModelForm):
 
     # TODO validate better
 
+class AuditionSettingsForm(forms.ModelForm):
+    class Meta:
+        model = AuditionAccount
+        fields = ('gender', 'age', 'ethnicity', 'location')
+
 class PortfolioForm(forms.ModelForm):
     class Meta:
         model = PastWork

@@ -3,6 +3,19 @@ from django.contrib.auth.models import User
 
 
 class AuditionAccount(models.Model):
+    GENDER_CHOICES = (
+        (0, "Female"),
+        (1, "Male"),
+        (2, "Apache Attack Helicopter")
+    )
+    ETHNICITY_CHOICES = (
+        (0, "Asian"),
+        (1, "Black"),
+        (2, "Hispanic"),
+        (3, "Native American"),
+        (4, "White")
+    )
+
     profile = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
@@ -10,6 +23,10 @@ class AuditionAccount(models.Model):
         blank=True,
         null=True,
     )
+    gender = models.IntegerField("gender", choices=GENDER_CHOICES)
+    age = models.IntegerField("age")
+    ethnicity = models.IntegerField("ethnicity", choices=ETHNICITY_CHOICES)
+    location = models.CharField("location", max_length=512)
 
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
