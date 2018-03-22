@@ -65,6 +65,7 @@ class Role(models.Model):
                 "domain": self.domain,
                 "address": self.studio_address,
                 "agent": str(self.agent),
+                "agent_id": self.agent.id
             },
             "events": events,
             "tags": tags,

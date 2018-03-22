@@ -84,7 +84,7 @@
                     <tbody>
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
-                            <td> <a v-bind:href="setAgentUrl(role.role.agent.id)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
+                            <td> <a v-bind:href="setAgentUrl(role.role.agent_id)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
                             <td>(( role.role.date ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
@@ -104,8 +104,6 @@
 {% block js %}
 <script type="text/javascript">
     var unparsed = "{{roles}}"
-    //var uniqueAgents = {{uniqueAgents}};
-    //console.log(uniqueAgents);
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
         parsed = processJS(unparsed)    
@@ -246,7 +244,7 @@
                 },
 
                 setAgentUrl: function(num) {
-                    return filterApp.url.replace("0", num);
+                    return filterApp.agentUrl.replace("0", num);
                 }
             },
         })

@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'^account/(?P<pk>[0-9]+)/$', views.AccountDelete.as_view(),
         name="delete-account"),
     url(r'^edit/(?P<pk>[0-9+]+)$', views.EditRoleView.as_view(), name='edit-role'),
-    url(r'^auditionProfile/(?P<pk>[0-9+]+)$', views.AuditionProfileView.as_view(), name='audition-profile'),
-    url(r'^castingProfile/(?P<pk>[0-9+]+)$', views.CastingProfileView.as_view(), name='casting-profile')
+    url(r'^auditioner/(?P<pk>[0-9+]+)$', views.AuditionProfileView.as_view(), name='audition-profile'),
+    url(r'^agent/(?P<pk>[0-9+]+)$', views.CastingProfileView.as_view(), name='casting-profile')
 
 ]

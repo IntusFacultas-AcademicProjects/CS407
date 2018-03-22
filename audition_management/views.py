@@ -70,7 +70,6 @@ class DashboardView(LoginRequiredMixin, View):
             if r.agent not in uniqueAgents:
                 uniqueAgents.append(r.agent)
 
-        print(uniqueAgents)
 
         dictionaries = [obj.as_dict() for obj in roles]
         
@@ -145,7 +144,7 @@ class SettingsView(LoginRequiredMixin, View):
             "account_type": account_type,
             "is_casting": is_casting_agent(request.user),
             "is_audition": is_audition_agent(request.user),
-            "roles": events
+            "roles": events,
         })
 
     def post(self, request):
@@ -344,16 +343,19 @@ class AuditionProfileView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         user = User.objects.get(pk=pk)
-        is_own_profile = False;
+        audition_account = user.audition_account
+        tags = audition_account.tags.all()
+        applied_events = Role.objects.filter()
+        is_own_profile = False
 
         #if the current user is visiting their own profile
         if (str(request.user.id) == pk):
-            is_own_profile = True;
+            is_own_profile = True
 
         return render(request, 'audition_management/auditionProfile.html', {
             "is_audition": is_audition_agent(request.user),
             "is_own_profile": is_own_profile,
-            'user': user
+            'user': audition_account
         })
 
 class CastingProfileView(LoginRequiredMixin, View):
