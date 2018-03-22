@@ -1,11 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
-from audition_management.models import AuditionAccount, Skill, PastWork, Role, PerformanceEvent, Tag
-from audition_management.models import CastingAccount
+from audition_management.models import Skill, PastWork, Role, PerformanceEvent, Tag, AuditionAccount
 from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
-    HeavySelect2MultipleWidget, HeavySelect2Widget, ModelSelect2MultipleWidget,
-    ModelSelect2TagWidget, ModelSelect2Widget, Select2MultipleWidget,
     Select2Widget
 )
 
@@ -36,18 +33,22 @@ class RoleCreationForm(forms.ModelForm):
             'domain': Select2Widget,
         }
 
+
 class EditRoleForm(forms.ModelForm):
     class Meta:
         model = Role
-        fields = ('name', 'description', 'domain', 'studio_address')
+        fields = ('name', 'description', 'domain', 'studio_address', 'status')
         widgets = {
             'domain': Select2Widget,
+            'status': Select2Widget
         }
+
 
 class TagForm(forms.ModelForm):
     class Meta:
         model = Tag
         fields = ['name']
+
 
 class EventForm(forms.ModelForm):
     class Meta:
@@ -68,6 +69,7 @@ SkillsFormSet = forms.inlineformset_factory(
     AuditionAccount, Skill, extra=1, form=SkillsForm, can_delete=True)
 PortfolioFormSet = forms.inlineformset_factory(
     AuditionAccount, PastWork, extra=1, form=PortfolioForm, can_delete=True)
+
 TagFormSet = forms.inlineformset_factory(
     Role, Tag, extra=1, form=TagForm, can_delete=True)
 EventFormSet = forms.inlineformset_factory(

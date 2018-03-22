@@ -73,6 +73,9 @@
     {% block js %}
     {% endblock js %}
     <script type="text/javascript">
+        $('form').submit(function() {
+            $(this).find("button[type='submit']").prop('disabled',true);
+        });
         function processJS(data) {
             // pass in a string
             // returns a JSON

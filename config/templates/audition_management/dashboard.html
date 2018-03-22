@@ -156,19 +156,15 @@
                     return filterApp.url.replace("0", num)
                 },
                 combinedFilter: function() {
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
+                    // filter by all filter options provided.
                     roles = filterApp.allRoles;
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.setFilterText(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.tagFilter(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     roles = filterApp.dateFilter(roles);
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                     filterApp.displayedRoles = roles;
-                    console.log($("#datetimepicker1").data('DateTimePicker').date())
                 },
                 setFilterText: function(roles) {
+                    // filters by text included in the name of the roles, case-insensitive
                     if (event) {
                         //update the text to filter by
                         filterText = $("#title").val();
@@ -188,6 +184,8 @@
                     }
                 },
                 tagFilter: function(roles) {
+                    // filters by tags, all tags in filter must be present in role
+                    // to pass filter
                     selected = $("#tagSelect").val()
                     if (selected.length == 0) {
                         return roles;
@@ -209,6 +207,8 @@
                     }
                 },
                 dateFilter: function(roles) {
+                    // filters by date. All events on a role must occur after the provided
+                    // date for the role to pass filter. Roles with no dates are immediately excluded.
                     date = $("#datetimepicker1").data('DateTimePicker').date();
                     $('#datetimepicker1').datetimepicker({
                         date: date
@@ -238,7 +238,6 @@
                     filterApp.displayedRoles = filterApp.allRoles;
                     $("#tagSelect").val(null).trigger('change');
                 },
-
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num);
                 }

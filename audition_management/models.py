@@ -59,7 +59,7 @@ class Role(models.Model):
         tags = [str(obj) for obj in tags]
         return {
             "role": {
-            	"id": self.pk,
+                "id": self.pk,
                 "name": '"' + self.name + '"',
                 "description": '"' + self.description + '"',
                 "domain": self.domain,
@@ -133,6 +133,13 @@ class PastWork(models.Model):
         null=True,
     )
 
+    def __str__(self):
+        return self.name
 
-def __str__(self):
-    return self.name
+
+class Application(models.Model):
+    role = models.ForeignKey(Role, on_delete=models.CASCADE,
+                             related_name="dates")
+    account = models.ForeignKey(
+        AuditionAccount,
+        on_delete=models.CASCADE)

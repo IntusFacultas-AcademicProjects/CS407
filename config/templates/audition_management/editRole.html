@@ -92,7 +92,7 @@
                             </table>  
                         </div>
                     </div>
-                    <button class="btn btn-primary" type="button" v-on:click="subForm">Save Changes</button>
+                    <button id="submitForm" class="btn btn-primary" type="button" v-on:click="subForm">Save Changes</button>
                 </form>
             </div>
         </div>
@@ -115,7 +115,7 @@
         {% endfor %}
     ]
     $(function() {
-        // life cycle
+        // life cycle fix
         setTimeout(function() {
             $('.formset_row').formset({
                     addText: 'Add Event',
@@ -162,9 +162,13 @@
             },
             methods: {
                 updateTags: function(event) {
+                    // this fires on input, if the comma delineator is found,
+                    // it creates a tag and deletes the text
                     app.tagDelete = 0;
-                    var id = app.tags[app.tags.length - 1].id
-                    $("#" + id).css("background-color", "")
+                    if (app.tags.length > 0) {
+                        var id = app.tags[app.tags.length - 1].id
+                        $("#" + id).css("background-color", "")
+                    }
                     if (app.insert[app.insert.length - 1] == ",") {
                         app.tags.push({
                             "tag": app.insert.substring(0, app.insert.length - 1),
@@ -177,6 +181,8 @@
                     }
                 },
                 removeTags: function() {
+                    // if the user hits backspace twice, then it highlights the
+                    // tag to be deleted, a third backspace deletes the tag
                     app.tagDelete +=1;
                     if (app.insert == "" && app.tagDelete == 2) {
                         var id = app.tags[app.tags.length - 1].id
@@ -188,11 +194,13 @@
                     }
                 },
                 subForm: function() {
+                    $("#submitForm").prop('disabled',true);
                     $("#updatedTags").val(JSON.stringify(app.tags))
                     $("#tagEdit").submit();
                 },
                 deleteTag: function(id) {
-                    console.log(id)
+                    // when the user clicks on the X for the tags, this method
+                    // is used to splice out the tag from the array.`
                     for (var x = 0; x < app.tags.length; x++) {
                         if (app.tags[x].id == id) {
                             console.log(app.tags[x])
