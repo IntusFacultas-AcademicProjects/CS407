@@ -14,10 +14,10 @@ class SettingsForm(forms.ModelForm):
 
     # TODO validate better
 
-class SkillsForm(forms.ModelForm):
+class AuditionSettingsForm(forms.ModelForm):
     class Meta:
-        model = Skill
-        fields = ['name']
+        model = AuditionAccount
+        fields = ('gender', 'age', 'ethnicity', 'location')
 
 class PortfolioForm(forms.ModelForm):
     class Meta:
@@ -65,11 +65,10 @@ class EventForm(forms.ModelForm):
             })
         }
 
-SkillsFormSet = forms.inlineformset_factory(
-    AuditionAccount, Skill, extra=1, form=SkillsForm, can_delete=True)
 PortfolioFormSet = forms.inlineformset_factory(
     AuditionAccount, PastWork, extra=1, form=PortfolioForm, can_delete=True)
-
+ProfileTagFormSet = forms.inlineformset_factory(
+    AuditionAccount, Tag, extra=1, form=TagForm, can_delete=True)
 TagFormSet = forms.inlineformset_factory(
     Role, Tag, extra=1, form=TagForm, can_delete=True)
 EventFormSet = forms.inlineformset_factory(
