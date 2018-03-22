@@ -123,8 +123,6 @@
                                             </div>
                                             <div class="modal-body">
                                                 {% if is_casting %}
-                                                    <iframe width="560" height="315" src="https://www.youtube.com/embed/k0XN8JZiRms" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen> 
-                                                    </iframe>
                                                 {% else %}
                                                 Coming Soon
                                                 {% endif %}
@@ -236,6 +234,9 @@
                                             <td>(( role.role.address ))</td>
                                             <td>
                                                 <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">Edit</a>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm pull-right" type ="button">Delete</button>
                                             </td>
                                         </tr>
                                     </tbody>
