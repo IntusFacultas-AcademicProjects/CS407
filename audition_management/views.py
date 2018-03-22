@@ -110,19 +110,25 @@ class DashboardView(LoginRequiredMixin, View):
                 matching_roles.append({'role': role, 'score': role_score})
         matching_roles_sorted = sorted(
             matching_roles, key=lambda k: k['score'], reverse=True)
+
         return [r['role'] for r in matching_roles_sorted]
 
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
-        roles = self.get_roles(request)
-        dictionaries = [obj.as_dict() for obj in roles]
+        matching_roles = self.get_roles(request)
+        matching_roles_ids = [r.id for r in matching_roles]
+        other_roles = []
+        for role in Role.objects.all():
+            if role.id not in matching_roles_ids:
+                other_roles.append(role)
 
         # Later, these roles will be filtered and ordered based on a number
         # of factors, the rough algorithm for which is found at the bottom of
         # the page.
         return render(request, 'audition_management/dashboard.html', {
-            "roles": dictionaries,
+            "matching_roles": [obj.as_dict() for obj in matching_roles],
+            "other_roles": [obj.as_dict() for obj in other_roles],
             "is_casting": is_casting_agent(request.user),
             "is_audition": is_audition_agent(request.user),
         })
