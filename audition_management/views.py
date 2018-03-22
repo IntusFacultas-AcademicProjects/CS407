@@ -39,10 +39,47 @@ def is_casting_agent(current_user):
 
 class DashboardView(LoginRequiredMixin, View):
 
+    def similar(self, a, b):
+        return SequenceMatcher(None, a, b).ratio()
+
+    def get_word_synonyms_from_tags(self, role_tag, user_tags):
+        role_tag_synonyms = []
+        for synset in role_tag.net.synsets(role_tag.name):
+            for lemma in synset.lemma_names():
+                for tag in user_tags:
+                    if tag.name == lemma:
+                        role_tag_synonyms.append(lemma)
+        return role_tag_synonyms
+
+    def get_roles(self, request):
+        roles = Role.objects.all()
+        account = request.user.audition_account
+        tags = account.tags.all()
+        matching_roles = []
+        for role in roles:
+            role_score = 0
+            for tag in tags:
+                for role_tag in role.tags.all():
+                    similarity_index = self.similar(tag.name, role_tag.name)
+                    # confidence threshold of 80% chosen arbitrarily
+                    if similarity_index > .8:
+                        role_score += 1
+                        break
+                    else:
+                        tag_synonyms = self.get_word_synonyms_from_tags(tag.name, role_tag.name)
+                        if len(tag_synonyms) > 0:
+                            # synonym found.
+                            role_score += 1
+                            break
+            if role_score > 0:
+                matching_roles.append({'role': role, 'score': role_score})
+        matching_roles_sorted = sorted(matching_roles, key=lambda k: k['score'], reverse=True)
+        return [r['role'] for r in matching_roles_sorted]
+
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
-        roles = Role.objects.all()
+        roles = self.get_roles(request)
         dictionaries = [obj.as_dict() for obj in roles]
         # Later, these roles will be filtered and ordered based on a number
         # of factors, the rough algorithm for which is found at the bottom of
@@ -166,6 +203,18 @@ class RoleView(LoginRequiredMixin, View):
     def post(self, _, pk):
         Role.objects.filter(id=pk).delete()
         return HttpResponseRedirect(reverse(DashboardView))
+
+
+class UserView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        profile = None
+        if is_casting_agent(request.user):
+            return
+        return render(request, 'audition_management/role.html', {
+            "role": role,
+            "is_casting": is_casting_agent(request.user)
+        })
 
 
 class RoleCreationView(LoginRequiredMixin, View):
@@ -299,39 +348,3 @@ class EditRoleView(LoginRequiredMixin, View):
                 'formset': formset,
                 "is_casting": is_casting_agent(request.user)
             })
-
-
-"""
-    This will be used in sprint 2
-    def similar(a, b):
-        return SequenceMatcher(None, a, b).ratio()
-
-    def get_word_synonyms_from_tags(role_tag, user_tags):
-        role_tag_synonyms = []
-        for synset in role_tagnet.synsets(role_tag.name):
-            for lemma in synset.lemma_names():
-                for tag in user_tags:
-                    if tag.name == lemma:
-                        role_tag_synonyms.append(lemma)
-        return word_synonyms
-
-    # fuzzy search algorithm
-    roles = Role.objects.all()
-    account = request.user.audition_account
-    tags = account.tags.all()
-    matching_roles = []
-    for tag in tags:
-        for role in roles:
-            for role_tag in role.tags.all():
-                similarity_index = similar(tag.name, role_tag.name)
-                # confidence threshold of 80% chosen arbitrarily
-                if similarity > .8:
-                    matching_roles.append(role)
-                    break
-                else:
-                    tag_synonyms = get_word_synonyms_from_tags(word, sent)
-                    if len(tag_synonyms) > 0:
-                        # synonym found.
-                        matching_roles.append(role)
-                        break
-"""
