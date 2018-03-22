@@ -123,8 +123,6 @@
                                             </div>
                                             <div class="modal-body">
                                                 {% if is_casting %}
-                                                    <iframe width="560" height="315" src="https://www.youtube.com/embed/k0XN8JZiRms" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen> 
-                                                    </iframe>
                                                 {% else %}
                                                 Coming Soon
                                                 {% endif %}
@@ -138,6 +136,21 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-12">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                <h4>Professional Information</h4><br>
+                <small id="emailHelp" class="form-text text-muted">This section is visible to prospective agents looking to hire you. Tell us what you've done before, provide us some tags so we can match you with agents looking for people with your strengths!</small>
+            </div>
+            <div class="panel-body">
+                <div class="row">
+                    
                 </div>
             </div>
         </div>
@@ -241,6 +254,9 @@
                                             <td>
                                                 <a v-bind:href="setViewUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
                                                 <a style="margin-right: 5px;" v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">Edit</a>
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-danger btn-sm pull-right" type ="button">Delete</button>
                                             </td>
                                         </tr>
                                     </tbody>

@@ -15,7 +15,8 @@ from nltk.corpus import wordnet
 import json
 # Create your views here.
 from audition_management.forms import (
-    RoleCreationForm, EventForm, EventFormSet, EditRoleForm, TagFormSet)
+    RoleCreationForm, EventForm, EventFormSet, EditRoleForm,
+    AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
 
 
 def is_casting_agent(current_user):
@@ -38,6 +39,26 @@ def is_casting_agent(current_user):
     return False
 
 
+def is_audition_agent(current_user):
+    """
+    Returns true if the user has a audition_account account,
+    Returns false otherwise.
+
+    Errors if the user has no account.
+    """
+    user = None
+    try:
+        user = current_user.casting_account
+        return False
+    except CastingAccount.DoesNotExist:
+        try:
+            user = current_user.audition_account
+            return True
+        except AuditionAccount.DoesNotExist:
+            pass
+    return False
+
+
 def get_user(current_user):
     user = None
     try:
@@ -52,17 +73,58 @@ def get_user(current_user):
 
 class DashboardView(LoginRequiredMixin, View):
 
+    def similar(self, a, b):
+        return SequenceMatcher(None, a, b).ratio()
+
+    def get_word_synonyms_from_tags(self, role_tag, user_tags):
+        role_tag_synonyms = []
+        for synset in role_tag.net.synsets(role_tag.name):
+            for lemma in synset.lemma_names():
+                for tag in user_tags:
+                    if tag.name == lemma:
+                        role_tag_synonyms.append(lemma)
+        return role_tag_synonyms
+
+    def get_roles(self, request):
+        roles = Role.objects.all()
+        account = request.user.audition_account
+        tags = account.tags.all()
+        matching_roles = []
+        for role in roles:
+            role_score = 0
+            for tag in tags:
+                for role_tag in role.tags.all():
+                    similarity_index = self.similar(tag.name, role_tag.name)
+                    # confidence threshold of 80% chosen arbitrarily
+                    if similarity_index > .8:
+                        role_score += 1
+                        break
+                    else:
+                        tag_synonyms = self.get_word_synonyms_from_tags(
+                            tag.name, role_tag.name)
+                        if len(tag_synonyms) > 0:
+                            # synonym found.
+                            role_score += 1
+                            break
+            if role_score > 0:
+                matching_roles.append({'role': role, 'score': role_score})
+        matching_roles_sorted = sorted(
+            matching_roles, key=lambda k: k['score'], reverse=True)
+        return [r['role'] for r in matching_roles_sorted]
+
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
-        roles = Role.objects.all()
+        roles = self.get_roles(request)
         dictionaries = [obj.as_dict() for obj in roles]
+
         # Later, these roles will be filtered and ordered based on a number
         # of factors, the rough algorithm for which is found at the bottom of
         # the page.
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries,
-            "is_casting": is_casting_agent(request.user)
+            "is_casting": is_casting_agent(request.user),
+            "is_audition": is_audition_agent(request.user),
         })
 
 
@@ -108,17 +170,33 @@ class SettingsView(LoginRequiredMixin, View):
             # grab all applications made by this auditioner
             events = user.applications.all()
             events = [obj.as_dict() for obj in events]
-        # this form is used to modify account settings that aren't passwords
+            # this form is used to modify account non-password settings
+            auditionform = AuditionSettingsForm(
+                instance=request.user.audition_account)
+            portfolioformset = PortfolioFormSet(prefix="form1")
+            tagformset = ProfileTagFormSet(prefix="form1")
         form = SettingsForm(instance=request.user)
         # this is a Django Password Modification form
         change_password_form = PasswordChangeForm(request.user)
-        return render(request, 'session/settings.html', {
-            'form': form,
-            "change_password_form": change_password_form,
-            "account_type": account_type,
-            "is_casting": is_casting_agent(request.user),
-            "roles": events
-        })
+        if is_casting_agent(request.user):
+            return render(request, 'session/settings.html', {
+                'form': form,
+                "change_password_form": change_password_form,
+                "account_type": account_type,
+                "is_casting": is_casting_agent(request.user),
+                "roles": events
+            })
+        else:
+            return render(request, 'session/settings.html', {
+                'form': form,
+                "change_password_form": change_password_form,
+                "account_type": account_type,
+                "is_casting": is_casting_agent(request.user),
+                "audition_form": auditionform,
+                "tag_form_set": tagformset,
+                "portfolio_form_set": portfolioformset,
+                "is_audition": is_audition_agent(request.user),
+            })
 
     def post(self, request):
         # form_type is used to tell which form was submitted.
@@ -139,6 +217,82 @@ class SettingsView(LoginRequiredMixin, View):
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user)
+                })
+        elif request.POST.get("form_type") == 'audition_form':
+            form = SettingsForm(request.POST, instance=request.user)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                tag_formset = ProfileTagFormSet(prefix="form1")
+                portfolio_formset = PortfolioFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "audition_form": form,
+                    "tag_form_set": tag_formset,
+                    "portfolio_form_set": portfolio_formset
+                })
+        elif request.POST.get("form_type") == 'tag_form_set':
+            formset = ProfileTagFormSet(request.POST, prefix="form1")
+            if formset.is_valid():
+                for form in formset:
+                    if form.is_valid():
+                        tag = form.save(commit=False)
+                        tag.account = request.account
+                        tag.save()
+                messages.success(
+                    request, "Tags successfully added to posting.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                audition_form = AuditionSettingsForm(instance=request.account)
+                portfolio_formset = PortfolioFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "audition_form": audition_form,
+                    "tag_form_set": formset,
+                    "portfolio_form_set": portfolio_formset
+                })
+        elif request.POST.get("form_type") == 'portfolio_form_set':
+            formset = PortfolioFormSet(request.POST, prefix="form1")
+            if formset.is_valid():
+                for form in formset:
+                    if form.is_valid():
+                        pastwork = form.save(commit=False)
+                        pastwork.account = request.account
+                        pastwork.save()
+                messages.success(
+                    request, "Tags successfully added to posting.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                audition_form = AuditionSettingsForm(instance=request.account)
+                change_password_form = PasswordChangeForm(request.user)
+                tag_formset = ProfileTagFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "audition_form": audition_form,
+                    "tag_form_set": tag_formset,
+                    "portfolio_form_set": formset
                 })
         else:
             form = PasswordChangeForm(request.user, request.POST)
@@ -189,6 +343,29 @@ class RoleView(LoginRequiredMixin, View):
                 reverse("audition_management:role", args=[role.id]))
 
 
+class UserView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+
+        user = User.objects.get(pk=pk)
+        events = None
+        is_casting = is_casting_agent(user)
+        if is_casting:
+            user = user.casting_account
+            # grab all events made by the user
+            events = user.roles.all()
+            events = [obj.as_dict() for obj in events]
+        else:
+            user = user.audition_account
+            # grab all applications made by this auditioner
+            events = user.applications.all()
+            events = [obj.posting.as_dict() for obj in events]
+        return render(request, 'session/external_profile.html', {
+            "external_user": user,
+            "is_casting": is_casting_agent(request.user),
+            "user_is_casting": is_casting,
+            "roles": events
+        })
+
 
 class RoleCreationView(LoginRequiredMixin, View):
 
@@ -203,6 +380,7 @@ class RoleCreationView(LoginRequiredMixin, View):
 
     def post(self, request):
         form = RoleCreationForm(request.POST, prefix="form1")
+        formset = EventFormSet(request.POST, prefix="form2")
         role = None
         if form.is_valid():
             role = form.save(commit=False)
@@ -213,7 +391,6 @@ class RoleCreationView(LoginRequiredMixin, View):
                 'form': form,
                 "formset": formset
             })
-        formset = EventFormSet(request.POST, prefix="form2")
         if formset.is_valid() is False:
             messages.error(
                 request, "Please review the forms and try again.")
@@ -261,7 +438,8 @@ class TagCreationView(LoginRequiredMixin, View):
                     tag.save()
             messages.success(
                 request, "Tags successfully added to posting.")
-            return HttpResponseRedirect(reverse("audition_management:settings"))
+            return HttpResponseRedirect(
+                reverse("audition_management:settings"))
 
 
 class EditRoleView(LoginRequiredMixin, View):
@@ -299,12 +477,16 @@ class EditRoleView(LoginRequiredMixin, View):
                 elif form.is_valid() is False:
                     role = Role.objects.get(pk=pk)
                     form = EditRoleForm(instance=role, prefix="form1")
-                    return render(request, 'audition_management/editRole.html', {
-                        'role': role,
-                        'form': form,
-                        'formset': formset,
-                        "is_casting": is_casting_agent(request.user)
-                    })
+                    return render(
+                        request,
+                        'audition_management/editRole.html',
+                        {
+                            'role': role,
+                            'form': form,
+                            'formset': formset,
+                            "is_casting": is_casting_agent(request.user)
+                        }
+                    )
             # tags do not need to be preserved, so we nuke and readd
             role.tags.all().delete()
             for tag in update_tags:
@@ -323,59 +505,33 @@ class EditRoleView(LoginRequiredMixin, View):
             })
 
 
-class UserView(LoginRequiredMixin, View):
-    def get(self, request, pk):
-
-        user = User.objects.get(pk=pk)
-        events = None
-        is_casting = is_casting_agent(user) 
-        if is_casting:
-            user = user.casting_account
-            # grab all events made by the user
-            events = user.roles.all()
-            events = [obj.as_dict() for obj in events]
-        else:
-            user = user.audition_account
-            # grab all applications made by this auditioner
-            events = user.applications.all()
-            events = [obj.posting.as_dict() for obj in events]
-        return render(request, 'session/external_profile.html', {
-            "external_user": user,
-            "is_casting": is_casting_agent(request.user),
-            "user_is_casting": is_casting,
-            "roles": events
-        })
 """
     This will be used in sprint 2
     def similar(a, b):
         return SequenceMatcher(None, a, b).ratio()
+    def get(self, request, pk):
+        user = User.objects.get(pk=pk)
+        audition_account = user.audition_account
+        tags = audition_account.tags.all()
+        applied_events = Role.objects.filter()
+        is_own_profile = False
 
-    def get_word_synonyms_from_tags(role_tag, user_tags):
-        role_tag_synonyms = []
-        for synset in role_tagnet.synsets(role_tag.name):
-            for lemma in synset.lemma_names():
-                for tag in user_tags:
-                    if tag.name == lemma:
-                        role_tag_synonyms.append(lemma)
-        return word_synonyms
+        #if the current user is visiting their own profile
+        if (str(request.user.id) == pk):
+            is_own_profile = True
 
-    # fuzzy search algorithm
-    roles = Role.objects.all()
-    account = request.user.audition_account
-    tags = account.tags.all()
-    matching_roles = []
-    for tag in tags:
-        for role in roles:
-            for role_tag in role.tags.all():
-                similarity_index = similar(tag.name, role_tag.name)
-                # confidence threshold of 80% chosen arbitrarily
-                if similarity > .8:
-                    matching_roles.append(role)
-                    break
-                else:
-                    tag_synonyms = get_word_synonyms_from_tags(word, sent)
-                    if len(tag_synonyms) > 0:
-                        # synonym found.
-                        matching_roles.append(role)
-                        break
+        return render(request, 'audition_management/auditionProfile.html', {
+            "is_audition": is_audition_agent(request.user),
+            "is_own_profile": is_own_profile,
+            'user': audition_account
+        })
+
+class CastingProfileView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        user = User.objects.get(pk=pk)
+        print(user)
+        return render(request, 'audition_management/castingProfile.html', {
+            "user": user
+        })
 """

@@ -84,7 +84,7 @@
                     <tbody>
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
-                            <td>(( role.role.agent ))</td>
+                            <td> <a v-bind:href="setAgentUrl(role.role.agent_id)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
                             <td>(( role.role.date ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
@@ -240,6 +240,10 @@
                 },
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num);
+                },
+
+                setAgentUrl: function(num) {
+                    return filterApp.agentUrl.replace("0", num);
                 }
             },
         })

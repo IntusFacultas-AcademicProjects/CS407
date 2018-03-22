@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Audition Profile{% endblock %}
+
+{% block content %}
+<div id="roleDiv">
+	<div class = "container-fluid">
+	      <div class="row">
+	        <div class="col-sm-6">
+	          <div class="panel panel-primary">
+	            <div class="panel-heading">
+	              <h2 class='text-center'></h2>
+	            </div>
+	            <div class="panel-body">
+	            	<hr><br>
+	            </div>
+	          </div>
+	        </div>
+	        <div class="col-sm-6">
+	        	<div class="panel panel-primary">
+		            <div class="panel-heading">
+		              <h2 class='text-center'> Portfolio </h2>
+		            </div>
+		            <div class="panel-body" style="height:748px;">
+		            	<div class="row">
+		            		<div class="col-lg-12">
+		            			<div class='wrapper' style="height: 70%">
+					            	<table id="events" class="table table-striped">
+					            		<thead>
+					            			<tr>
+					            			</tr>
+					            		</thead>
+					            		<tbody>
+					            		</tbody>
+					            	</table>
+		            			</div>
+		            		</div>
+		            	</div>
+		            </div>
+		        </div>
+	        </div>
+	      </div>
+	  </div>
+</div>
+	{% if is_audition %}
+		<p>Audition Account</p>
+	{% endif %}
+	{% if is_own_profile %}
+		<p>Own Profile</p>
+	{% endif %}
+
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+	var unparsed = {{user}};
+	console.log(unparsed);
+</script>
+{% endblock js %}
