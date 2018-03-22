@@ -1,4 +1,4 @@
 *.sqlite3
 *.dot
 *.pyc
-.idea/
+.idea
