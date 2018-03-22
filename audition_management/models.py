@@ -14,6 +14,16 @@ class AuditionAccount(models.Model):
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
 
+    def as_dict(self):
+        tags = self.tags.all()
+        tags = [str(obj) for obj in tags]
+        return {
+            "user_pk": self.profile.id,
+            "name": '"' + str(self) + '"',
+            "email": '"' + self.profile.email + '"',
+            "tags": tags,
+        }
+
 
 class CastingAccount(models.Model):
     profile = models.OneToOneField(
@@ -108,3 +118,22 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Application(models.Model):
+    user = models.ForeignKey(
+        AuditionAccount,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+    posting = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+
+    def as_dict(self):
+        return {
+            "user": self.user.as_dict(),
+            "id": self.pk,
+        }

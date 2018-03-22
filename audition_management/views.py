@@ -7,7 +7,8 @@ from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
-from audition_management.models import Role, AuditionAccount, CastingAccount, Tag
+from audition_management.models import (
+    Role, AuditionAccount, CastingAccount, Tag, Application)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -35,6 +36,18 @@ def is_casting_agent(current_user):
         except CastingAccount.DoesNotExist:
             pass
     return False
+
+
+def get_user(current_user):
+    user = None
+    try:
+        user = current_user.audition_account
+    except AuditionAccount.DoesNotExist:
+        try:
+            user = current_user.casting_account
+        except CastingAccount.DoesNotExist:
+            pass
+    return user
 
 
 class DashboardView(LoginRequiredMixin, View):
@@ -70,38 +83,30 @@ class AccountDelete(LoginRequiredMixin, View):
 
 class SettingsView(LoginRequiredMixin, View):
 
-    def get_user(self, current_user):
-        user = None
-        try:
-            user = current_user.audition_account
-        except AuditionAccount.DoesNotExist:
-            try:
-                user = current_user.casting_account
-            except CastingAccount.DoesNotExist:
-                pass
-        return user
-
     def get_account_type(self, current_user):
         # this is for displaying to the user what account type they have
-        user = None
         try:
-            user = current_user.audition_account
+            current_user.audition_account
             return "Auditioner"
         except AuditionAccount.DoesNotExist:
             try:
-                user = current_user.casting_account
+                current_user.casting_account
                 return "Casting Agent"
             except CastingAccount.DoesNotExist:
                 pass
         return "None"
 
     def get(self, request):
-        user = self.get_user(request.user)
+        user = get_user(request.user)
         account_type = self.get_account_type(request.user)
         events = None
         if is_casting_agent(request.user):
             # grab all events made by the user
             events = user.roles.all()
+            events = [obj.as_dict() for obj in events]
+        else:
+            # grab all applications made by this auditioner
+            events = user.applications.all()
             events = [obj.as_dict() for obj in events]
         # this form is used to modify account settings that aren't passwords
         form = SettingsForm(instance=request.user)
@@ -158,10 +163,31 @@ class RoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         role = Role.objects.get(id=pk)
+        auditions = role.applications.all()
+        auditions = [obj.as_dict() for obj in auditions]
         return render(request, 'audition_management/role.html', {
             "role": role,
-            "is_casting": is_casting_agent(request.user)
+            "is_casting": is_casting_agent(request.user),
+            "auditions": auditions
         })
+
+    def post(self, request, pk):
+        role = Role.objects.get(id=pk)
+        if not is_casting_agent(request.user):
+            audition_account = request.user.audition_account
+            Application.objects.create(
+                user=audition_account, posting=role)
+            messages.success(
+                request, "Audition request has been sent. The casting agent will be in touch with you.")
+            return HttpResponseRedirect(
+                reverse("audition_management:role", args=[role.id]))
+        else:
+            application_pk = request.POST.get("pk")
+            Application.objects.get(pk=application_pk).delete()
+            messages.success(request, "Application deleted")
+            return HttpResponseRedirect(
+                reverse("audition_management:role", args=[role.id]))
+
 
 
 class RoleCreationView(LoginRequiredMixin, View):
@@ -297,6 +323,28 @@ class EditRoleView(LoginRequiredMixin, View):
             })
 
 
+class UserView(LoginRequiredMixin, View):
+    def get(self, request, pk):
+
+        user = User.objects.get(pk=pk)
+        events = None
+        is_casting = is_casting_agent(user) 
+        if is_casting:
+            user = user.casting_account
+            # grab all events made by the user
+            events = user.roles.all()
+            events = [obj.as_dict() for obj in events]
+        else:
+            user = user.audition_account
+            # grab all applications made by this auditioner
+            events = user.applications.all()
+            events = [obj.posting.as_dict() for obj in events]
+        return render(request, 'session/external_profile.html', {
+            "external_user": user,
+            "is_casting": is_casting_agent(request.user),
+            "user_is_casting": is_casting,
+            "roles": events
+        })
 """
     This will be used in sprint 2
     def similar(a, b):

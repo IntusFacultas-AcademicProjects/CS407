@@ -1,0 +1,353 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}User Overview{% endblock %}
+
+{% block content %}
+	<div class="row">
+		<div class="col-lg-12">
+			<div class="panel panel-primary">
+				<div class="panel-heading filter-collapsed-bar">
+	                <div class="row">   
+	                    <div class="col-lg-11">
+	                        <h4>User Information Area</h4>
+	                    </div>
+	                    <div class="col-lg-1">
+	                        <i class="fa fa-chevron-down fa-2x" style="display:none;" aria-hidden="true"></i>
+	                        <i class="fa fa-chevron-up fa-2x"  aria-hidden="true"></i>
+	                    </div>
+	                </div>
+	            </div>
+	            <div class="panel-body">
+	            	<div class="row">
+	            		<div class="col-lg-12">
+	            			<table class="table table-striped">
+	            				<tbody>
+	            					<tr>
+	            						<th>
+	            							Type of Account
+	            						</th>
+	            						<td>
+											{% if user_is_casting %}
+												Casting Agent
+	            							{% else %}
+	            								Auditioner
+											{% endif %}
+	            						</td>
+	            					</tr>
+	            					<tr>
+	            						<th>
+	            							Name
+	            						</th>
+	            						<td>
+	            							{{external_user}}
+	            						</td>
+	            					</tr>
+	            					<tr>
+	            						<th>
+	            							Email
+	            						</th>
+	            						<td>
+	            							{{external_user.profile.email}}
+	            						</td>
+	            					</tr>
+	            					{% if not is_casting %}
+	            					<tr>
+	            						<th>
+	            							Account Tags
+	            						</th>
+	            						<td>
+	            							{% for tag in external_user.tags.all %}
+											<span class="badge badge-info pull-left" style="margin:2px;">
+											{{ tag }}
+											</span>
+											{% endfor %}
+	            						</td>
+	            					</tr>
+	            					{% endif %}
+	            				</tbody>
+	            			</table>
+	            		</div>
+	            	</div>
+	            </div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+	    <div class="col-lg-12">
+	        <div class="panel panel-default">
+	            <div class="panel-heading">
+	                {% if not user_is_casting %}
+	                    <h4>Roles {{external_user}} has auditioned for</h4>
+	                {% else %}
+	                    <h4>Postings {{external_user}} has created</h4>
+	                {% endif %}
+	            </div>
+	            <div class="panel-body">
+	                <div id="filterDiv">
+	                    <div class="row">
+	                        <div class="col-lg-12">
+	                            <div class="panel panel-info">
+	                                <div class="panel-heading filter-collapsed-bar-2">
+	                                    <div class="row">
+	                                        <div class="col-lg-11">
+	                                            Filter Options
+	                                        </div>
+	                                    </div>
+	                                </div>
+	                                <div class="panel-body">
+	                                    <div class="form-horizontal">
+	                                        <div class="form-group">
+	                                            <div class="col-lg-6">
+	                                                <label for="title" class="control-label">Contains Text:</label>
+	                                                <input id="title" type="text" class="form-control" v-model="filterText" placeholder="Enter text to filter by">
+	                                            </div>
+	                                            <div class="col-lg-6">
+	                                                <label for="tagSelect" class="control-label">Has Tags:</label>
+	                                                 <select class="form-control" style="width:100%" id="tagSelect" multiple>
+	                                                    <option v-for="tag, index in tags" v-bind:value="tag">
+	                                                        (( tag ))
+	                                                    </option>
+	                                                </select>
+	                                            </div>
+	                                        </div>
+	                                        <div class="form-group">
+	                                            <div class="col-lg-6">
+	                                                <label for="datetimepicker1" class="control-label">Dates After</label>
+	                                                <div class='input-group date' id='datetimepicker1'>
+	                                                    <input type='text' class="form-control" v-model="filterDate" />
+	                                                    <span class="input-group-addon">
+	                                                        <span class="glyphicon glyphicon-calendar"></span>
+	                                                    </span>
+	                                                </div>
+	                                                <small id="emailHelp" class="form-text text-muted">All roles will have a list of events that can be seen by clicking 'View' on a role. Filtering by dates will ensure that all events fall within the requested range</small>
+	                                            </div>
+	                                            <div class="col-lg-6">
+	                                                {% comment %}
+	                                                 <!-- eventually location filtering will be here -->
+	                                                {% endcomment %}
+	                                            </div>
+	                                        </div>
+	                                        <div class="form-group">
+	                                            <div class="col-lg-9">
+	                                                
+	                                            </div>
+	                                            <div class="col-lg-3">
+	                                                <button v-on:click="resetFilters()" class="btn btn-warning" type="button">
+	                                                    Reset Filters
+	                                                </button>
+	                                                <button v-on:click="combinedFilter()" class="btn btn-primary" type="button">
+	                                                    Filter
+	                                                </button>
+	                                            </div>
+	                                        </div>
+	                                    </div>
+	                                </div>
+	                            </div>
+	                        </div>
+	                    </div>
+	                    <div class="row">
+	                        <div class="col-sm-12">
+	                            <div class='wrapper' style="height: 500px">
+	                                <table id="roles" class="table table-hover table-striped">
+	                                    <thead>
+	                                        <tr style="background-color:white;">
+	                                            <th>Role</th>
+	                                            <th>Casting Agent</th>
+	                                            <th>Date</th>
+	                                            <th>Tags</th>
+	                                            <th>Location</th>
+	                                            <th>&nbsp;</th>
+	                                        </tr>
+	                                    </thead>
+	                                    <tbody>
+	                                        <tr v-for="role in displayedRoles">
+	                                            <td>(( role.role.name ))</td>
+	                                            <td>(( role.role.agent ))</td>
+	                                            <td>(( role.role.date ))</td>
+	                                            <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
+	                                            </td>
+	                                            <td>(( role.role.address ))</td>
+	                                            <td>
+	                                                <a v-bind:href="setViewUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
+	                                            </td>
+	                                        </tr>
+	                                    </tbody>
+	                                </table>
+	                            </div>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	        </div>
+	    </div>
+	</div>
+{% endblock content %}
+
+{% block js %}
+<script type="text/javascript">
+    $(".filter-collapsed-bar").click(function () {
+
+        $header = $(".filter-collapsed-bar");
+        $content = $header.next();
+
+        $content.slideToggle(500, function () {
+
+                if ($content.is(":visible")) {
+                        $(".fa-chevron-up").css("display","inline-block");
+                        $(".fa-chevron-down").css("display", "none");
+                }
+                else {
+                        $(".fa-chevron-up").css("display", "none");
+                        $(".fa-chevron-down").css("display","inline-block");
+                }
+
+
+        });
+    });
+    var unparsed = "{{roles}}"
+    $(function() {
+        unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
+        parsed = processJS(unparsed)    
+         $("#results").floatThead({
+            scrollContainer: function($table){
+                return $table.closest('.wrapper');
+            }
+        });
+         setTimeout(function() {
+            $("#tagSelect").select2();
+        }, 100);
+        filterApp = new Vue({
+            el: "#filterDiv",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+                filterText: "",
+                filterTags: [],
+                filterDate: "",
+                tags: [],
+                displayedRoles: [],
+                allRoles: [],
+                url: "{% url 'audition_management:edit-role' pk=0 %}",
+                viewUrl: "{% url 'audition_management:role' pk=0 %}"
+            },
+            mounted: function() {
+                // we save the 'this' keyword here because once we enter the next scope
+                // 'this' will become the jQuery object $("#datetimepicker1") so
+                // in order to access the app, we save it to a local variable
+                var internalApp = this;
+                this.allRoles = parsed
+                this.displayedRoles = this.allRoles
+                // populate the tags array with unique tags only
+                for (var x = 0; x < parsed.length; x++) {
+                    for (var y = 0; y < parsed[x].tags.length; y++) {
+                        if (!this.tags.includes(parsed[x].tags[y])) {
+                            this.tags.push(parsed[x].tags[y])
+                        }
+                    }
+                }
+                $('#datetimepicker1').datetimepicker({
+                    "icons": {
+                        "date": "glyphicon glyphicon-time",
+                        "up": "fa fa-arrow-up",
+                        "down": "fa fa-arrow-down"
+                    }
+                });
+            },
+            methods: {
+                setUrl: function(num) {
+                    return filterApp.url.replace("0", num)
+                },
+                combinedFilter: function() {
+                    // filter by all available data
+                    roles = filterApp.allRoles;
+                    roles = filterApp.setFilterText(roles);
+                    roles = filterApp.tagFilter(roles);
+                    roles = filterApp.dateFilter(roles);
+                    filterApp.displayedRoles = roles;
+                },
+                setFilterText: function(roles) {
+                    // filter by text (this filters by case-insensitive name)
+                    if (event) {
+                        //update the text to filter by
+                        filterText = $("#title").val();
+
+                        //temp storage to eventually become the displayedRoles
+                        var filteredRoles = [];
+
+                        //filter the displayed roles based on the filterText
+                        for (i = 0; i < roles.length; i++) {
+                            if (roles[i].role.name.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
+                                filteredRoles.push(roles[i]);
+                            } 
+                        }
+
+                        //set the displayedRoles to our filtered roles
+                        return filteredRoles;
+                    }
+                },
+                tagFilter: function(roles) {
+                    // filter by tags (all tags provided must be present)
+                    selected = $("#tagSelect").val()
+                    if (selected.length == 0) {
+                        return roles;
+                    }
+                    else {
+                        return roles.filter(function(role) {
+                            var val = false;
+                            for (var x = 0; x < selected.length; x++) {
+                                if (role.tags.indexOf(selected[x]) > -1) {
+                                    val = true;
+                                }
+                                else {
+                                    return false;
+                                }
+
+                            }
+                            return val;
+                        })
+                    }
+                },
+                dateFilter: function(roles) {
+                    // filters by date (all events must occur after the provided date)
+                    date = $("#datetimepicker1").data('DateTimePicker').date();
+                    $('#datetimepicker1').datetimepicker({
+                        date: date
+                    });
+                    if (date == null) {
+                        return roles;
+                    }
+                    return roles.filter(function(role) {
+                        var valid = false;
+                        if (role.events.length == 0) {
+                            return false;
+                        }
+                        for (var y = 0; y < role.events.length; y++) {
+                            var dateString = role.events[y].event.date.split(" ")[0]
+                            var momentDate = moment(dateString, "YYYY-MM-DD");
+                            if (momentDate < date) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    })
+                },
+                resetFilters: function() {
+                    filterApp.filterText = "";
+                    filterApp.filterTags = [];
+                    filterApp.filterDate = "";
+                    filterApp.displayedRoles = filterApp.allRoles;
+                    $("#tagSelect").val(null).trigger('change');
+                },
+                setViewUrl: function(num) {
+                    return filterApp.viewUrl.replace("0", num)
+                },
+                setUrl: function(num) {
+                    return filterApp.url.replace("0", num);
+                }
+            },
+        })
+    })
+</script>
+{% endblock js %}
