@@ -1,11 +1,8 @@
 from django import forms
 from django.contrib.auth.models import User
 from audition_management.models import Role, PerformanceEvent, Tag
-from audition_management.models import CastingAccount
 from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
-    HeavySelect2MultipleWidget, HeavySelect2Widget, ModelSelect2MultipleWidget,
-    ModelSelect2TagWidget, ModelSelect2Widget, Select2MultipleWidget,
     Select2Widget
 )
 
@@ -30,9 +27,10 @@ class RoleCreationForm(forms.ModelForm):
 class EditRoleForm(forms.ModelForm):
     class Meta:
         model = Role
-        fields = ('name', 'description', 'domain', 'studio_address')
+        fields = ('name', 'description', 'domain', 'studio_address', 'status')
         widgets = {
             'domain': Select2Widget,
+            'status': Select2Widget
         }
 
 

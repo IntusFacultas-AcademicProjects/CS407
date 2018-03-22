@@ -108,3 +108,11 @@ class Tag(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Application(models.Model):
+    role = models.ForeignKey(Role, on_delete=models.CASCADE,
+                             related_name="dates")
+    account = models.ForeignKey(
+        AuditionAccount,
+        on_delete=models.CASCADE)
