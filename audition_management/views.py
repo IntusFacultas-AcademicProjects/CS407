@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
-from audition_management.models import Role, AuditionAccount, CastingAccount, Tag
+from audition_management.models import Role, AuditionAccount, CastingAccount, Tag, Application
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -195,24 +195,42 @@ class RoleView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         role = Role.objects.get(id=pk)
-        return render(request, 'audition_management/role.html', {
-            "role": role,
-            "is_casting": is_casting_agent(request.user)
-        })
+        if role.agent.profile.username == request.user.usernmae:
+            applicants = [a['account'] for a in Application.objects.get(role=role)]
+            return render(request, 'audition_management/role.html', {
+                "role": role,
+                "applicants": applicants,
+                "is_casting": is_casting_agent(request.user)
+            })
+        else:
+            return render(request, 'audition_management/role.html', {
+                "role": role,
+                "is_casting": is_casting_agent(request.user)
+            })
 
     def post(self, _, pk):
-        Role.objects.filter(id=pk).delete()
-        return HttpResponseRedirect(reverse(DashboardView))
+        role = Role.objects.get(id=pk)
+        applicant = None # TODO how is this going to be sent to me?
+        # TODO send email (I think Pedro said he was going to do this)
 
 
 class UserView(LoginRequiredMixin, View):
 
+    def get_user(self, current_user):
+        user = None
+        try:
+            user = current_user.audition_account
+        except AuditionAccount.DoesNotExist:
+            try:
+                user = current_user.casting_account
+            except CastingAccount.DoesNotExist:
+                pass
+        return user
+
     def get(self, request, pk):
-        profile = None
-        if is_casting_agent(request.user):
-            return
-        return render(request, 'audition_management/role.html', {
-            "role": role,
+        user = self.get_user(User.objects.get(id=pk))
+        return render(request, 'audition_management/user.html', { # TODO change user.html to whatever
+            "user": user,
             "is_casting": is_casting_agent(request.user)
         })
 
