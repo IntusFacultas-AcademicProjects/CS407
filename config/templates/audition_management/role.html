@@ -157,18 +157,17 @@
 							</thead>
 							<tbody>
 								<tr v-for="person in displayedApplicants">
-                                    <td>(( person.user.name ))</td>
+                                    <td><a v-bind:href="viewAccount(person.user.user_pk)" style="text-decoration: none;">(( person.user.name ))</a></td>
                                     <td>(( person.user.email ))</td>
                                     <td><span class="badge badge-primary" v-for="tag in person.user.tags">(( tag ))</span>
                                     </td>
                                     <td>
                                     </td>
                                     <td>
-                            			<a v-bind:href="viewAccount(person.user.user_pk)" class="btn btn-xs btn-info">View Account</a>
                                     	<form action="" method="post">
                                     		{% csrf_token %}
                                     		<input type="hidden" name="pk" v-bind:value="person.id">
-                                    		<button style="margin-left:100px; margin-top:-48px;" type="submit" class="btn btn-xs btn-danger">X</button></td>
+                                    		<button type="submit" class="btn btn-sm btn-danger">X</button></td>
                                     	</form>
                                 </tr>
 							</tbody>

@@ -159,7 +159,7 @@ class Application(models.Model):
 
 
 class PastWork(models.Model):
-    name = models.CharField("Name", max_length=128)
+    name = models.CharField("Description of Past Works", max_length=128)
     account = models.ForeignKey(
         AuditionAccount,
         on_delete=models.CASCADE,

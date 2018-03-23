@@ -10,7 +10,7 @@
 				<div class="panel-heading filter-collapsed-bar">
 	                <div class="row">   
 	                    <div class="col-lg-11">
-	                        <h4>User Information Area</h4>
+	                        <h4>User Information</h4>
 	                    </div>
 	                    <div class="col-lg-1">
 	                        <i class="fa fa-chevron-down fa-2x" style="display:none;" aria-hidden="true"></i>
@@ -21,6 +21,7 @@
 	            <div class="panel-body">
 	            	<div class="row">
 	            		<div class="col-lg-12">
+	            			<h4>Basic and Logistic Information</h4>
 	            			<table class="table table-striped">
 	            				<tbody>
 	            					<tr>
@@ -51,7 +52,7 @@
 	            							{{external_user.profile.email}}
 	            						</td>
 	            					</tr>
-	            					{% if not is_casting %}
+	            					{% if not user_is_casting %}
 	            					<tr>
 	            						<th>
 	            							Account Tags
@@ -64,11 +65,54 @@
 											{% endfor %}
 	            						</td>
 	            					</tr>
+	            					<tr>
+	            						<th>Gender</th>
+	            						<td>{{external_user.get_gender_display}}</td>
+	            					</tr>
+	            					<tr>
+	            						<th>Age</th>
+	            						<td>{{external_user.age}}</td>
+	            					</tr>
+	            					<tr>
+	            						<th>Ethnicity</th>
+	            						<td>{{external_user.get_ethnicity_display}}</td>
+	            					</tr>
+	            					<tr>
+	            						<th>
+	            							Location
+	            						</th>
+	            						<td>
+	            							{{external_user.location}}
+	            						</td>
+	            					</tr>
 	            					{% endif %}
 	            				</tbody>
 	            			</table>
 	            		</div>
 	            	</div>
+	            	{% if not user_is_casting %}
+	            	<div class="row">
+	            		<div class="col-lg-12">
+	            			<h4>Portfolio</h4>
+	            			<table class="table table-striped">
+	            				<thead>
+	            					<tr>
+	            						<th>Past Work Experiences</th>
+	            					</tr>
+	            				</thead>
+	            				<tbody>
+	            					{% for event in external_user.pastworks.all %}
+	            					<tr>
+	            						<td>
+	            							{{event.name}}
+	            						</td>
+	            					</tr>
+	            					{% endfor %}
+	            				</tbody>
+	            			</table>
+	            		</div>
+	            	</div>
+	            	{% endif %}
 	            </div>
 			</div>
 		</div>

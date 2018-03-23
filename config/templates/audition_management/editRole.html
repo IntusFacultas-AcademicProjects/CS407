@@ -170,10 +170,21 @@
                         $("#" + id).css("background-color", "")
                     }
                     if (app.insert[app.insert.length - 1] == ",") {
-                        app.tags.push({
-                            "tag": app.insert.substring(0, app.insert.length - 1),
-                            "id": "newId" + app.addedTags++,
-                        })
+                        if (app.insert.indexOf(" ")  > -1) {
+                            tags = app.insert.substring(0, app.insert.length - 1).split(" ");
+                            for (var x = 0; x < tags.length; x++) {
+                                app.tags.push({
+                                    "tag": tags[x],
+                                    "id": "newId" + app.addedTags++,
+                                })
+                            }
+                        }
+                        else {
+                            app.tags.push({
+                                "tag": app.insert.substring(0, app.insert.length - 1),
+                                "id": "newId" + app.addedTags++,
+                            })
+                        }
                         app.insert = "";
                     }
                     else {

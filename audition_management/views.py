@@ -78,8 +78,8 @@ class DashboardView(LoginRequiredMixin, View):
         role_tag_synonyms = []
         for synset in wordnet.synsets(role_tag):
             for lemma in synset.lemma_names():
-                    if user_tags == lemma:
-                        role_tag_synonyms.append(lemma)
+                if user_tags == lemma:
+                    role_tag_synonyms.append(lemma)
         return role_tag_synonyms
 
     def get_roles(self, request):
@@ -197,9 +197,7 @@ class SettingsView(LoginRequiredMixin, View):
                 "account_type": account_type,
                 "is_casting": is_casting_agent(request.user),
                 "audition_form": auditionform,
-                "tag_form_set": tagformset,
                 "portfolio_formset": portfolioformset,
-                "is_audition": is_audition_agent(request.user),
             })
 
     def post(self, request):
@@ -216,14 +214,37 @@ class SettingsView(LoginRequiredMixin, View):
                 # the user
                 account_type = self.get_account_type(request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                return render(request, 'session/settings.html', {
-                    'form': form,
-                    "change_password_form": change_password_form,
-                    "account_type": account_type,
-                    "is_casting": is_casting_agent(request.user)
-                })
+                if is_casting_agent(request.user):
+                    # grab all events made by the user
+                    events = request.user.roles.all()
+                    events = [obj.as_dict() for obj in events]
+                    return render(request, 'session/settings.html', {
+                        'form': form,
+                        "change_password_form": change_password_form,
+                        "account_type": account_type,
+                        "is_casting": is_casting_agent(request.user),
+                        "roles": events
+                    })
+                else:
+                    # grab all applications made by this auditioner
+                    events = request.user.applications.all()
+                    events = [obj.as_dict() for obj in events]
+                    # this form is used to modify account non-password settings
+                    auditionform = AuditionSettingsForm(
+                        instance=request.user.audition_account)
+                    portfolioformset = PortfolioFormSet(
+                        instance=request.user.audition_account,
+                        prefix="form1")
+                    return render(request, 'session/settings.html', {
+                        'form': form,
+                        "change_password_form": change_password_form,
+                        "account_type": account_type,
+                        "is_casting": is_casting_agent(request.user),
+                        "audition_form": auditionform,
+                        "portfolio_formset": portfolioformset,
+                    })
         elif request.POST.get("form_type") == 'audition_form':
-            form = SettingsForm(request.POST, instance=request.user)
+            form = AuditionSettingsForm(request.POST, instance=request.user)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -241,8 +262,7 @@ class SettingsView(LoginRequiredMixin, View):
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user),
                     "audition_form": form,
-                    "tag_form_set": tag_formset,
-                    "portfolio_form_set": portfolio_formset
+                    "portfolio_formset": portfolio_formset
                 })
         elif request.POST.get("form_type") == 'tag_formset':
             update_tags = json.loads(request.POST.get("update_tags"))
@@ -251,11 +271,14 @@ class SettingsView(LoginRequiredMixin, View):
                 Tag.objects.create(
                     name=tag["tag"], account=request.user.audition_account)
             messages.success(
-                request, "Tags successfully added to your account.")
+                request, "Tags successfully updated.")
             return HttpResponseRedirect(
                 reverse("audition_management:settings"))
         elif request.POST.get("form_type") == 'portfolio_formset':
-            formset = PortfolioFormSet(request.POST, prefix="form1")
+            formset = PortfolioFormSet(
+                request.POST,
+                prefix="form1",
+                instance=request.user.audition_account)
             if formset.is_valid():
                 for form in formset:
                     if form.is_valid():
@@ -272,15 +295,16 @@ class SettingsView(LoginRequiredMixin, View):
                 audition_form = AuditionSettingsForm(
                     instance=request.user.audition_account)
                 change_password_form = PasswordChangeForm(request.user)
-                tag_formset = ProfileTagFormSet(prefix="form1")
+                print(formset.errors)
+                messages.error(
+                    request, "Please review your input and try again.")
                 return render(request, 'session/settings.html', {
                     'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user),
                     "audition_form": audition_form,
-                    "tag_form_set": tag_formset,
-                    "portfolio_form_set": formset
+                    "portfolio_formset": formset
                 })
         else:
             form = PasswordChangeForm(request.user, request.POST)
@@ -291,14 +315,30 @@ class SettingsView(LoginRequiredMixin, View):
                 return HttpResponseRedirect(
                     reverse("audition_management:settings"))
             else:
-                account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
-                return render(request, 'session/settings.html', {
-                    'form': account_form,
-                    "change_password_form": form,
-                    "account_type": account_type,
-                    "is_casting": is_casting_agent(request.user)
-                })
+                account_type = self.get_account_type(request.user)
+                if is_casting_agent(request.user):
+                    return render(request, 'session/settings.html', {
+                        'form': account_form,
+                        "change_password_form": form,
+                        "account_type": account_type,
+                        "is_casting": is_casting_agent(request.user),
+                        "roles": events
+                    })
+                else:
+                    auditionform = AuditionSettingsForm(
+                        instance=request.user.audition_account)
+                    portfolioformset = PortfolioFormSet(
+                        instance=request.user.audition_account,
+                        prefix="form1")
+                    return render(request, 'session/settings.html', {
+                        'form': account_form,
+                        "change_password_form": form,
+                        "account_type": account_type,
+                        "is_casting": is_casting_agent(request.user),
+                        "audition_form": auditionform,
+                        "portfolio_formset": portfolioformset,
+                    })
 
 
 class RoleView(LoginRequiredMixin, View):

@@ -36,6 +36,27 @@ class RoleCreationForm(forms.ModelForm):
             'domain': Select2Widget,
         }
 
+    def clean_name(self):
+        data = self.cleaned_data['name']
+        data = data.replace("'", "")
+        data = data.replace('"', "")
+        data = data.replace('\\', "")
+        return data
+
+    def clean_description(self):
+        data = self.cleaned_data['description']
+        data = data.replace("'", "")
+        data = data.replace('"', "")
+        data = data.replace('\\', "")
+        return data
+
+    def clean_studio_address(self):
+        data = self.cleaned_data['studio_address']
+        data = data.replace("'", "")
+        data = data.replace('"', "")
+        data = data.replace('\\', "")
+        return data
+
 
 class EditRoleForm(forms.ModelForm):
     class Meta:
