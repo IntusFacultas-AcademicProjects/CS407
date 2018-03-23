@@ -92,7 +92,8 @@ class Role(models.Model):
                 "domain": self.domain,
                 "address": self.studio_address,
                 "agent": str(self.agent),
-                "agent_id": self.agent.id
+                "agent_id": self.agent.id,
+                "user_pk": self.agent.profile.id,
             },
             "events": events,
             "tags": tags,
@@ -169,5 +170,3 @@ class PastWork(models.Model):
 
     def __str__(self):
         return self.name
-
-

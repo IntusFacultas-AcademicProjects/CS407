@@ -10,7 +10,7 @@
             <div class="panel-heading filter-collapsed-bar">
                 <div class="row">   
                     <div class="col-lg-11">
-                        <h4>Account Information Area</h4>
+                        <h4>Account Information</h4>
                     </div>
                     <div class="col-lg-1">
                         <i class="fa fa-chevron-down fa-2x" style="display:none;" aria-hidden="true"></i>
@@ -141,21 +141,134 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-lg-12">
-        <div class="panel panel-info">
-            <div class="panel-heading">
-                <h4>Professional Information</h4><br>
-                <small id="emailHelp" class="form-text text-muted">This section is visible to prospective agents looking to hire you. Tell us what you've done before, provide us some tags so we can match you with agents looking for people with your strengths!</small>
-            </div>
-            <div class="panel-body">
-                <div class="row">
-                    
+{% if not is_casting %}
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="panel panel-info">
+                <div class="panel-heading">
+                    <h4>Professional Information</h4>
+                    <small id="emailHelp" class="form-text text-muted">This section is visible to prospective agents looking to hire you. Tell us what you've done before, provide us some tags so we can match you with agents looking for people with your strengths!</small>
+                </div>
+                <div class="panel-body">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form class="form-horizontal" style="margin:20px;" method="post">
+                                <div class="form-group">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="form_type" value="portfolio_formset">
+                                    <h4>Previous Work</h4>
+                                    <small id="emailHelp" class="form-text text-muted">Provide a small description or name of a production you worked with!</small>
+                                </div>
+                                <div class="form-group">
+                                    {{ portfolio_formset.management_form }}
+                                    <table class="table table-striped">
+                                        {% for form in portfolio_formset %}
+                                            {% if forloop.first %}
+                                                <thead>
+                                                <tr>
+                                                    {% for field in form.visible_fields %}
+                                                        <th>{{ field.label|capfirst }}</th>
+                                                    {% endfor %}
+                                                </tr>
+                                                </thead>
+                                            {% endif %}
+                                            <tr class="{% cycle 'row1' 'row2' %} formset_row">
+                                                {% for field in form.visible_fields %}
+                                                    <td>
+                                                        {# Include the hidden fields in the form #}
+                                                        {% if forloop.first %}
+                                                            {% for hidden in form.hidden_fields %}
+                                                                {{ hidden }}
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                        {% render_field field class+="form-control" %}
+                                                        {% if field.errors|length > 0 %}
+                                                        <div class="form-group">
+                                                            <ul>
+                                                                {% for error in field.errors %}
+                                                                <li style="color: red">{{ error }}</li>
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                        {% endif %}
+                                                    </td>
+                                                {% endfor %}
+                                            </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form> 
+                        </div>
+                    </div>
+                    <hr style="margin-top:5px; margin-bottom:5px;">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form class="form-horizontal" style="margin:20px;" id="tagEdit" method="post">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <h4>Tags</h4>
+                                    <small id="emailHelp" class="form-text text-muted">Tags are how you tell us the soft skills and attributes you have that you want us to match roles with. Skills like singing soprano, stunt work, and so would go here. It's best if you use single word tags.</small>
+                                </div>
+                                <div class="form-group">
+                                    <span v-for="tag in tags" class="badge badge-success pull-left" v-bind:id="tag.id" style="padding:10px; margin: 2px;">
+                                        ((tag.tag))
+                                        <i style="cursor:pointer" v-on:click="deleteTag(tag.id)" class="fa fa-times-circle"></i>
+                                    </span>
+                                    <input type="hidden" name="update_tags" value="" id="updatedTags">
+                                    <input type="hidden" name="form_type" value="tag_formset">
+                                </div>
+                                <div class="form-group">
+                                    <input type="text" class="form-control" v-model="insert" v-on:input="updateTags(event)" v-on:keyup.delete="removeTags()">
+                                    <small class="form-text text-muted" >To add new tags, simply write out the tag and put a comma "," at the end to delineate a new tag. To remove tags, you can click the X on the tags above, or continuously hit backspace (the tag to be deleted will be highlighted in red).</small><br>
+                                </div>
+                                <div class="form-group">
+                                    <button id="submitForm" class="btn btn-primary" type="button" style="margin-top:10px" v-on:click="subForm">Save Changes</button>                       
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <hr style="margin-top:5px; margin-bottom:5px;">
+                    <div class="row">
+                        <div class="col-lg-12">
+                            <form class="form-horizontal" style="margin:20px;" method="post">
+                                <div class="form-group">
+                                    <input type="hidden" name="form_type" value="audition_form">
+                                    <h4>Biological and Logistical Information</h4>
+                                    <small id="emailHelp" class="form-text text-muted">Some roles require a certain age, gender, or location. Tell us about yourself, so we can match you better!</small>
+                                </div>
+                                {% csrf_token %}
+                                {% for field in audition_form %}
+                                <div class="form-group">
+                                    {{ field.label_tag }}
+                                    {% render_field field class+="form-control" %}
+                                    {% if field.help_text %}
+                                    <small class="form-text text-muted" >{{ field.help_text }}</small>
+                                    {% endif %}
+                                </div>
+                                {% if field.errors|length > 0 %}
+                                <div class="form-group">
+                                    <ul>
+                                        {% for error in field.errors %}
+                                        <li style="color: red">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                {% endfor %}
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
+{% endif %}
 <div class="row">
     <div class="col-lg-12">
         <div class="panel panel-default">
@@ -275,6 +388,7 @@
 
 {% block js %}
 <script type="text/javascript">
+    
     $(".filter-collapsed-bar").click(function () {
 
         $header = $(".filter-collapsed-bar");
@@ -477,7 +591,87 @@
                     return filterApp.url.replace("0", num);
                 }
             },
+        });
+    {% if not is_casting %}
+        $('.formset_row').formset({
+            addText: 'Add Previous Work',
+            deleteText: 'Remove',
+            prefix: 'form1',
+            addCssClass: 'btn btn-sm btn-primary',
+            deleteCssClass: 'btn btn-sm btn-danger',
+        });
+        data = [
+            {% for tag in request.user.audition_account.tags.all %}
+                { 
+                    "tag": "{{tag.name}}", 
+                    "id": {{tag.id}},
+                },
+            {% endfor %}
+        ]
+        app = new Vue({
+            el: "#tagEdit",
+            delimiters: ["((", "))"],
+            data: {
+                tags: [],
+                insert: "",
+                tagDelete: 0,
+                addedTags: 0,
+            },
+            mounted: function() {
+                this.tags = data;
+            },
+            methods: {
+                updateTags: function(event) {
+                    // this fires on input, if the comma delineator is found,
+                    // it creates a tag and deletes the text
+                    app.tagDelete = 0;
+                    if (app.tags.length > 0) {
+                        var id = app.tags[app.tags.length - 1].id
+                        $("#" + id).css("background-color", "")
+                    }
+                    if (app.insert[app.insert.length - 1] == ",") {
+                        app.tags.push({
+                            "tag": app.insert.substring(0, app.insert.length - 1),
+                            "id": "newId" + app.addedTags++,
+                        })
+                        app.insert = "";
+                    }
+                    else {
+                        // do nothing, typing
+                    }
+                },
+                removeTags: function() {
+                    // if the user hits backspace twice, then it highlights the
+                    // tag to be deleted, a third backspace deletes the tag
+                    app.tagDelete +=1;
+                    if (app.insert == "" && app.tagDelete == 2) {
+                        var id = app.tags[app.tags.length - 1].id
+                        $("#" + id).css("background-color", "red")
+                    }
+                    else if (app.insert == "" && app.tagDelete == 3) {
+                        app.tags.splice(app.tags.length - 1, 1);
+                        app.tagDelete = 1;
+                    }
+                },
+                subForm: function() {
+                    $("#submitForm").prop('disabled',true);
+                    $("#updatedTags").val(JSON.stringify(app.tags))
+                    $("#tagEdit").submit();
+                },
+                deleteTag: function(id) {
+                    // when the user clicks on the X for the tags, this method
+                    // is used to splice out the tag from the array.`
+                    for (var x = 0; x < app.tags.length; x++) {
+                        if (app.tags[x].id == id) {
+                            console.log(app.tags[x])
+                            app.tags.splice(x, 1);
+                            break;
+                        }
+                    }
+                }
+            }
         })
+    {% endif %}
     })
 </script>
 {% endblock js %}

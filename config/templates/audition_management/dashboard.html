@@ -84,7 +84,7 @@
                     <tbody>
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
-                            <td> <a v-bind:href="setAgentUrl(role.role.agent_id)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
+                            <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
                             <td>(( role.role.date ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
@@ -128,6 +128,7 @@
                 displayedRoles: [],
                 allRoles: [],
                 url: "{% url 'audition_management:role' pk=0 %}",
+                agentUrl: "{% url 'audition_management:user' pk=0 %}"
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -241,7 +242,6 @@
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num);
                 },
-
                 setAgentUrl: function(num) {
                     return filterApp.agentUrl.replace("0", num);
                 }
