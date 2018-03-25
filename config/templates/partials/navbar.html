@@ -12,6 +12,38 @@
                     <a class="nav-link" style="cursor:pointer" href="{% url 'audition_management:create' %}">Create Posting</a>
                 </li>
                 {% endif %}
+                {% if user.is_authenticated %}
+                 <li class="nav-item dropdown btn-group">
+                    <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-bell" {% if user.messages.all|length > 0 %} style="color:yellow" {% endif %}></i>
+                    </a>
+                    <ul class="dropdown-menu dropdown pull-right" style="margin-left: -146px; width: 320px; background-color:white; border: 2px solid #222222; padding:10px; z-index:100000;" aria-labelledby="dropdownMenu1">
+                        {% for alert in user.messages.all %}
+                        <li class="nav-item">
+                            <div class="row">
+                                <div class="col-lg-10">
+                                    {{alert.text}}
+                                </div>
+                                <div class="col-lg-1">
+                                    <form action="{% url 'audition_management:messages' pk=alert.id %}" method="post">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="url_of_request" value="{{request.get_full_path}}">
+                                        <button class="btn btn-link"  style="margin-left:-10px;" type="submit">
+                                            <i class="fa fa-window-close" style="color:red" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                            <hr style="margin-top:3px; margin-bottom: 3px;">
+                        </li>
+                        {% empty %}
+                        <li class="nav-item">
+                            No messages yet
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endif %}
                 <li class="nav-item dropdown btn-group">
                     <a class="nav-link dropdown-toggle" style="cursor:pointer" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {% if user.is_authenticated %} Hello {% endif %} {{ user.first_name }} <i style="margin-left: 5px" class="fa fa-cog fa-lg" aria-hidden="true"></i>

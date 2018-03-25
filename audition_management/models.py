@@ -170,3 +170,12 @@ class PastWork(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Alert(models.Model):
+    text = models.CharField("Alert Text", max_length=256)
+    account = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="messages",
+    )

@@ -153,6 +153,7 @@
 								<th>Name</th>
 								<th>Email</th>
 								<th>Tags</th>
+								<th>Invite to another Audition</th>
 								<th>&nbsp;</th>
 							</thead>
 							<tbody>
@@ -162,6 +163,12 @@
                                     <td><span class="badge badge-primary" v-for="tag in person.user.tags">(( tag ))</span>
                                     </td>
                                     <td>
+                                    	<form v-bind:action="invite(person.user.user_pk)" method="post">
+                                    		{% csrf_token %}
+                                    		<input type="hidden" name="role_pk" value="{{role.id}}">
+                                    		<input type="hidden" name="url_of_request" value="{{request.get_full_path}}">
+                                    		<button type="submit" class="btn btn-sm btn-primary">Invite</button>
+                                    	</form>
                                     </td>
                                     <td>
                                     	<form action="" method="post">
@@ -205,7 +212,8 @@
                 filterText: "",
                 displayedApplicants: [],
                 allApplicants: [],
-                url: "{% url 'audition_management:user' pk=0 %}"
+                url: "{% url 'audition_management:user' pk=0 %}",
+                invite_url: "{% url 'audition_management:invite' pk=0 %}",
             },
             mounted: function() {
             	var internalApp = this;
@@ -215,6 +223,9 @@
             methods: {
             	viewAccount: function(num) {
 					return filterApp.url.replace("0", num)
+            	},
+            	invite: function(num) {
+        			return filterApp.invite_url.replace("0", num)
             	}
             }
         })

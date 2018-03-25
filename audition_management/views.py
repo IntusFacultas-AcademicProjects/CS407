@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application)
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -359,6 +359,11 @@ class RoleView(LoginRequiredMixin, View):
             audition_account = request.user.audition_account
             Application.objects.create(
                 user=audition_account, posting=role)
+            text = "{} has applied for the role {}.".format(
+                request.user.audition_account, role)
+            Alert.objects.create(
+                text=text,
+                account=role.agent.profile)
             messages.success(
                 request, "Audition request has been sent. The casting agent will be in touch with you.")
             return HttpResponseRedirect(
@@ -533,33 +538,33 @@ class EditRoleView(LoginRequiredMixin, View):
             })
 
 
-"""
-    This will be used in sprint 2
-    def similar(a, b):
-        return SequenceMatcher(None, a, b).ratio()
-    def get(self, request, pk):
+class InvitationView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        if not is_casting_agent(request.user):
+            messages.error(request,
+                "You cannot invite someone to a role if you are not the owner of that role")
+            return HttpResponseRedirect(request.POST.get("url_of_request"))
         user = User.objects.get(pk=pk)
-        audition_account = user.audition_account
-        tags = audition_account.tags.all()
-        applied_events = Role.objects.filter()
-        is_own_profile = False
+        role = Role.objects.get(pk=request.POST.get("role_pk"))
+        text = "{} has invited you to another round of auditions for {}. Arrange a time with them over email.".format(
+            request.user.casting_account,
+            role
+        )
+        Alert.objects.create(
+            text=text,
+            account=user
+        )
+        messages.success(request,
+            "User has been invited to another round of auditions.")
+        return HttpResponseRedirect(request.POST.get("url_of_request"))
 
-        #if the current user is visiting their own profile
-        if (str(request.user.id) == pk):
-            is_own_profile = True
 
-        return render(request, 'audition_management/auditionProfile.html', {
-            "is_audition": is_audition_agent(request.user),
-            "is_own_profile": is_own_profile,
-            'user': audition_account
-        })
-
-class CastingProfileView(LoginRequiredMixin, View):
-
-    def get(self, request, pk):
-        user = User.objects.get(pk=pk)
-        print(user)
-        return render(request, 'audition_management/castingProfile.html', {
-            "user": user
-        })
-"""
+class MessageView(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        alert = Alert.objects.get(pk=pk)
+        if request.user != alert.account:
+            messages.error(request, "Alert does not exist.")
+            return HttpResponseRedirect(request.POST.get("url_of_request"))
+        else:
+            alert.delete()
+            return HttpResponseRedirect(request.POST.get("url_of_request"))
