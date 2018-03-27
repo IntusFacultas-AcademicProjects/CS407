@@ -116,11 +116,11 @@ class DashboardView(LoginRequiredMixin, View):
         if not is_casting_agent(request.user):
             roles = self.get_roles(request)
         else:
-            #roles = Role.objects.all()
             roles = Role.objects.filter(status=1)
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
         all_roles_dictionaries = [obj.as_dict() for obj in Role.objects.filter(status=1)]
+        print(all_roles_dictionaries)
 
         # Later, these roles will be filtered and ordered based on a number
         # of factors, the rough algorithm for which is found at the bottom of
@@ -128,23 +128,6 @@ class DashboardView(LoginRequiredMixin, View):
         return render(request, 'audition_management/dashboard.html', {
             "roles": dictionaries,
             "all_roles": all_roles_dictionaries,
-            "is_casting": is_casting_agent(request.user),
-            "is_audition": is_audition_agent(request.user),
-        })
-
-
-class AllRolesView(LoginRequiredMixin, View):
-    def get(self, request):
-        # grabs all roles and returns them in JSON format for the SPA Framework
-        # to use
-        roles = Role.objects.filter(status=1)
-        dictionaries = [obj.as_dict() for obj in roles]
-
-        # Later, these roles will be filtered and ordered based on a number
-        # of factors, the rough algorithm for which is found at the bottom of
-        # the page.
-        return render(request, 'audition_management/dashboard.html', {
-            "roles": dictionaries,
             "is_casting": is_casting_agent(request.user),
             "is_audition": is_audition_agent(request.user),
         })
