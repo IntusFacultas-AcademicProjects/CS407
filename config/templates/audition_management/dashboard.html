@@ -5,6 +5,7 @@
 
 {% block content %}
 <div id="jsonData" "></div>
+
 <div id="filterDiv">
     <div class="row">
         <div class="col-lg-12">
@@ -69,7 +70,43 @@
     </div>
     <div class="row">
         <div class="col-sm-12">
-            <div class='wrapper' style="height: 70%">
+            <h4>Suggested Roles</h4>
+            <small id="emailHelp" class="form-text text-muted">These are roles that we think would suit you based on the information you've given us about yourself.</small>
+            <div class='wrapper' style="height: 300px">
+                <table id="roles" class="table table-hover table-striped">
+                    <thead>
+                        <tr style="background-color:white;">
+                            <th>Role</th>
+                            <th>Casting Agent</th>
+                            <th>Date</th>
+                            <th>Tags</th>
+                            <th>Location</th>
+                            <th>&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="role in displayedRoles">
+                            <td>(( role.role.name ))</td>
+                            <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
+                            <td>(( role.role.date ))</td>
+                            <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
+                            </td>
+                            <td>(( role.role.address ))</td>
+                            <td>
+                                <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<h4>All Roles</h4>
+<div id="filterDiv2">
+    <div class="row">
+        <div class="col-sm-12">
+            <div class='wrapper' style="height: 1000px">
                 <table id="roles" class="table table-hover table-striped">
                     <thead>
                         <tr style="background-color:white;">
@@ -104,9 +141,12 @@
 {% block js %}
 <script type="text/javascript">
     var unparsed = "{{roles}}"
+    var unparsed2 = "{{all_roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = processJS(unparsed)    
+        parsed = processJS(unparsed)
+        unparsed2 = unparsed2.split("&#39;").join("\"").split("&quot;").join("")
+        parsed2 = processJS(unparsed2)    
          $("#results").floatThead({
             scrollContainer: function($table){
                 return $table.closest('.wrapper');
@@ -163,6 +203,11 @@
                     roles = filterApp.tagFilter(roles);
                     roles = filterApp.dateFilter(roles);
                     filterApp.displayedRoles = roles;
+                    roles2 = filterApp2.allRoles;
+                    roles2 = filterApp2.setFilterText(roles2);
+                    roles2 = filterApp2.tagFilter(roles2);
+                    roles2 = filterApp2.dateFilter(roles2);
+                    filterApp2.displayedRoles = roles2;
                 },
                 setFilterText: function(roles) {
                     // filters by text included in the name of the roles, case-insensitive
@@ -237,6 +282,7 @@
                     filterApp.filterTags = [];
                     filterApp.filterDate = "";
                     filterApp.displayedRoles = filterApp.allRoles;
+                    filterApp2.displayedRoles = filterApp2.allRoles;
                     $("#tagSelect").val(null).trigger('change');
                 },
                 setUrl: function(num) {
@@ -244,6 +290,127 @@
                 },
                 setAgentUrl: function(num) {
                     return filterApp.agentUrl.replace("0", num);
+                }
+            },
+        })
+        filterApp2 = new Vue({
+            el: "#filterDiv2",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {                
+                displayedRoles: [],
+                allRoles: [],
+                url: "{% url 'audition_management:role' pk=0 %}",
+                agentUrl: "{% url 'audition_management:user' pk=0 %}"
+            },
+            computed: {
+                filterText: function() {
+                    return filterApp2.filterText;
+                },
+                filterTags: function() {
+                    return filterApp2.filterTags;
+                },
+                filterDate: function() {
+                    return filterApp2.filterDate;
+                },
+            },
+            mounted: function() {
+                // we save the 'this' keyword here because once we enter the next scope
+                // 'this' will become the jQuery object $("#datetimepicker1") so
+                // in order to access the app, we save it to a local variable
+                var internalApp = this;
+                this.allRoles = parsed2;
+                this.displayedRoles = this.allRoles
+            },
+            methods: {
+                setUrl: function(num) {
+                    return filterApp2.url.replace("0", num)
+                },
+                combinedFilter: function() {
+                    // filter by all filter options provided.
+                    roles = filterApp2.allRoles;
+                    roles = filterApp2.setFilterText(roles);
+                    roles = filterApp2.tagFilter(roles);
+                    roles = filterApp2.dateFilter(roles);
+                    filterApp2.displayedRoles = roles;
+                },
+                setFilterText: function(roles) {
+                    // filters by text included in the name of the roles, case-insensitive
+                    if (event) {
+                        //update the text to filter by
+                        filterText = $("#title").val();
+
+                        //temp storage to eventually become the displayedRoles
+                        var filteredRoles = [];
+
+                        //filter the displayed roles based on the filterText
+                        for (i = 0; i < roles.length; i++) {
+                            if (roles[i].role.name.toLowerCase().indexOf(filterText.toLowerCase()) != -1) {
+                                filteredRoles.push(roles[i]);
+                            } 
+                        }
+
+                        //set the displayedRoles to our filtered roles
+                        return filteredRoles;
+                    }
+                },
+                tagFilter: function(roles) {
+                    // filters by tags, all tags in filter must be present in role
+                    // to pass filter
+                    selected = $("#tagSelect").val()
+                    if (selected.length == 0) {
+                        return roles;
+                    }
+                    else {
+                        return roles.filter(function(role) {
+                            var val = false;
+                            for (var x = 0; x < selected.length; x++) {
+                                if (role.tags.indexOf(selected[x]) > -1) {
+                                    val = true;
+                                }
+                                else {
+                                    return false;
+                                }
+
+                            }
+                            return val;
+                        })
+                    }
+                },
+                dateFilter: function(roles) {
+                    // filters by date. All events on a role must occur after the provided
+                    // date for the role to pass filter. Roles with no dates are immediately excluded.
+                    date = $("#datetimepicker1").data('DateTimePicker').date();
+                    $('#datetimepicker1').datetimepicker({
+                        date: date
+                    });
+                    if (date == null) {
+                        return roles;
+                    }
+                    return roles.filter(function(role) {
+                        var valid = false;
+                        if (role.events.length == 0) {
+                            return false;
+                        }
+                        for (var y = 0; y < role.events.length; y++) {
+                            var dateString = role.events[y].event.date.split(" ")[0]
+                            var momentDate = moment(dateString, "YYYY-MM-DD");
+                            if (momentDate < date) {
+                                return false;
+                            }
+                        }
+                        return true;
+                    })
+                },
+                resetFilters: function() {
+                    filterApp2.displayedRoles = filterApp2.allRoles;
+                },
+                setUrl: function(num) {
+                    return filterApp2.url.replace("0", num);
+                },
+                setAgentUrl: function(num) {
+                    return filterApp2.agentUrl.replace("0", num);
                 }
             },
         })
