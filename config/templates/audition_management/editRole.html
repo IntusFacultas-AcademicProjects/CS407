@@ -159,6 +159,14 @@
             },
             mounted: function() {
                 this.tags = data;
+                $('.date').datetimepicker({
+                    "format": "YYYY-MM-DD hh:mm",
+                    "icons": {
+                        "date": "glyphicon glyphicon-time",
+                        "up": "fa fa-arrow-up",
+                        "down": "fa fa-arrow-down"
+                    }
+                }); 
             },
             methods: {
                 updateTags: function(event) {

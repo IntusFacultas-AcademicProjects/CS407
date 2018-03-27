@@ -68,10 +68,10 @@ class Role(models.Model):
         (0, "Closed"),
         (1, "Open"),
     )
-    name = models.CharField("Name", max_length=256)
-    description = models.CharField("description", max_length=512)
+    name = models.CharField("Name", max_length=60)
+    description = models.CharField("description", max_length=100)
     domain = models.IntegerField("Role", choices=DOMAIN_CHOICES)
-    studio_address = models.CharField("Studio Address", max_length=512)
+    studio_address = models.CharField("Studio Address", max_length=95)
     agent = models.ForeignKey(CastingAccount, on_delete=models.CASCADE,
                               related_name="roles")
     status = models.IntegerField("Status", choices=STATUS_CHOICES, default=1)
