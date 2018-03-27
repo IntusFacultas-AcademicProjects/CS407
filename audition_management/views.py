@@ -253,7 +253,7 @@ class SettingsView(LoginRequiredMixin, View):
                         "portfolio_formset": portfolioformset,
                     })
         elif request.POST.get("form_type") == 'audition_form':
-            form = AuditionSettingsForm(request.POST, instance=request.user)
+            form = AuditionSettingsForm(request.POST, instance=request.user.audition_account)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -397,7 +397,7 @@ class UserView(LoginRequiredMixin, View):
         if is_casting:
             user = user.casting_account
             # grab all events made by the user
-            events = user.roles.all()
+            events = user.roles.filter(status=1)
             events = [obj.as_dict() for obj in events]
         else:
             user = user.audition_account
