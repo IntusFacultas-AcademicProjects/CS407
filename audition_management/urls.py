@@ -5,6 +5,7 @@ from audition_management import views
 app_name = "audition_management"
 urlpatterns = [
     url(r'^$', views.DashboardView.as_view(), name='index'),
+    url(r'^allroles$', views.AllRolesView.as_view(), name='index'),
     url(r'^settings$', views.SettingsView.as_view(), name='settings'),
     url(r'^role/(?P<pk>[0-9+]+)$', views.RoleView.as_view(), name='role'),
     url(r'^create/(?P<pk>[0-9+]+)/tags/$', views.TagCreationView.as_view(),
