@@ -83,7 +83,8 @@ class DashboardView(LoginRequiredMixin, View):
         return role_tag_synonyms
 
     def get_roles(self, request):
-        roles = Role.objects.all()
+        #roles = Role.objects.all()
+        roles = Role.objects.filter(status=1)
         account = request.user.audition_account
         tags = account.tags.all()
         matching_roles = []
@@ -113,9 +114,11 @@ class DashboardView(LoginRequiredMixin, View):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
         if not is_casting_agent(request.user):
-            roles = self.get_roles(request)
+            #roles = self.get_roles(request)
+            roles = Role.objects.filter(status=1)
         else:
-            roles = Role.objects.all()
+            #roles = Role.objects.all()
+            roles = Role.objects.filter(status=1)
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
 
