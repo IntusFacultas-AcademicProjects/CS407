@@ -5,8 +5,7 @@ from django.contrib.auth.models import User
 class AuditionAccount(models.Model):
     GENDER_CHOICES = (
         (0, "Female"),
-        (1, "Male"),
-        (2, "Apache Attack Helicopter")
+        (1, "Male")
     )
     ETHNICITY_CHOICES = (
         (0, "Asian"),
