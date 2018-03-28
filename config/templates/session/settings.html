@@ -350,9 +350,8 @@
                                         <tr style="background-color:white;">
                                             <th>Role</th>
                                             <th>Casting Agent</th>
-                                            <th>Date</th>
-                                            <th>Tags</th>
                                             <th>Location</th>
+                                            <th>Tags</th>
                                             <th>&nbsp;</th>
                                         </tr>
                                     </thead>
@@ -360,17 +359,24 @@
                                         <tr v-for="role in displayedRoles">
                                             <td>(( role.role.name ))</td>
                                             <td>(( role.role.agent ))</td>
-                                            <td>(( role.role.date ))</td>
+                                            <td>(( role.role.address ))</td>
                                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                                             </td>
-                                            <td>(( role.role.address ))</td>
                                             <td>
                                                 <a v-bind:href="setViewUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
-                                                <a style="margin-right: 5px;" v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">Edit</a>
                                             </td>
                                             <td>
-                                                <button class="btn btn-danger btn-sm pull-right" type ="button">Delete</button>
+                                                <a style="margin-right: 5px;" v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">Edit</a>
                                             </td>
+                                                <td>
+                                                    <form action="{% url 'audition_management:settings' %}" method="post">
+                                                        {% csrf_token %}
+                                                        <input type="hidden" name="form_type" value="delete">
+                                                        <input type="hidden" name="pk" v-bind:value="role.role.id">
+                                                        <button class="btn btn-danger btn-sm pull-right" type="submit">Delete</button>
+                                                    </form>
+                                                </td>
+                                            
                                         </tr>
                                     </tbody>
                                 </table>
@@ -474,7 +480,7 @@
                 displayedRoles: [],
                 allRoles: [],
                 url: "{% url 'audition_management:edit-role' pk=0 %}",
-                viewUrl: "{% url 'audition_management:role' pk=0 %}"
+                viewUrl: "{% url 'audition_management:role' pk=0 %}",
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -589,7 +595,10 @@
                 },
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num);
-                }
+                },
+                setDeleteUrl: function(num) {
+                    return filterApp.deleteUrl.replace("0", num)
+                },
             },
         });
     {% if not is_casting %}
