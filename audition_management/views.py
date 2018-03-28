@@ -119,7 +119,8 @@ class DashboardView(LoginRequiredMixin, View):
             roles = Role.objects.filter(status=1)
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
-        all_roles_dictionaries = [obj.as_dict() for obj in Role.objects.filter(status=1)]
+        all_roles_dictionaries = [obj.as_dict()
+                                  for obj in Role.objects.filter(status=1)]
         print(all_roles_dictionaries)
 
         # Later, these roles will be filtered and ordered based on a number
@@ -290,10 +291,13 @@ class SettingsView(LoginRequiredMixin, View):
                 instance=request.user.audition_account)
             if formset.is_valid():
                 for form in formset:
-                    if form.is_valid():
+                    if (form.is_valid() and
+                            form.cleaned_data.get('DELETE') is False):
                         pastwork = form.save(commit=False)
                         pastwork.account = request.user.audition_account
                         pastwork.save()
+                    elif (form.cleaned_data.get('DELETE') is True):
+                        form.cleaned_data.get('id').delete()
                 messages.success(
                     request, "Portfolio successfully updated.")
                 return HttpResponseRedirect(
@@ -448,7 +452,9 @@ class RoleCreationView(LoginRequiredMixin, View):
             })
         else:
             for form in formset:
-                if form.is_valid():
+                print(form.empty_permitted)
+                print(form.has_changed())
+                if form.is_valid() and form.has_changed():
                     event = form.save(commit=False)
                     event.role = role
                     event.save()
@@ -480,7 +486,7 @@ class TagCreationView(LoginRequiredMixin, View):
             })
         else:
             for form in formset:
-                if form.is_valid():
+                if form.is_valid() and form.has_changed():
                     tag = form.save(commit=False)
                     tag.role = role
                     tag.save()
@@ -523,8 +529,11 @@ class EditRoleView(LoginRequiredMixin, View):
                 elif (form.cleaned_data.get('DELETE') is True):
                     form.cleaned_data.get('id').delete()
                 elif form.is_valid() is False:
+                    print(form.data)
+                    print(form.cleaned_data)
                     role = Role.objects.get(pk=pk)
                     form = EditRoleForm(instance=role, prefix="form1")
+                    messages.error(request, "Please review your data and try again.")
                     return render(
                         request,
                         'audition_management/editRole.html',
@@ -545,6 +554,7 @@ class EditRoleView(LoginRequiredMixin, View):
         else:
             role = Role.objects.get(pk=pk)
             formset = EventFormSet(instance=role, prefix="form2")
+            messages.error(request, "Please review your data and try again.")
             return render(request, 'audition_management/editRole.html', {
                 'role': role,
                 'form': form,
@@ -557,7 +567,7 @@ class InvitationView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if not is_casting_agent(request.user):
             messages.error(request,
-                "You cannot invite someone to a role if you are not the owner of that role")
+                           "You cannot invite someone to a role if you are not the owner of that role")
             return HttpResponseRedirect(request.POST.get("url_of_request"))
         user = User.objects.get(pk=pk)
         role = Role.objects.get(pk=request.POST.get("role_pk"))
@@ -570,7 +580,7 @@ class InvitationView(LoginRequiredMixin, View):
             account=user
         )
         messages.success(request,
-            "User has been invited to another round of auditions.")
+                         "User has been invited to another round of auditions.")
         return HttpResponseRedirect(request.POST.get("url_of_request"))
 
 
