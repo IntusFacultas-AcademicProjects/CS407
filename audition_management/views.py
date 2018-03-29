@@ -210,6 +210,7 @@ class SettingsView(LoginRequiredMixin, View):
             })
 
     def post(self, request):
+        print("posted")
         # form_type is used to tell which form was submitted.
         if request.POST.get("form_type") == 'account_form':
             form = SettingsForm(request.POST, instance=request.user)
@@ -318,6 +319,12 @@ class SettingsView(LoginRequiredMixin, View):
                     "audition_form": audition_form,
                     "portfolio_formset": formset
                 })
+        elif request.POST.get("form_type") == 'delete':
+            Role.objects.get(pk=request.POST.get("pk")).delete()
+            messages.success(
+                request, "Role Successfully Deleted")
+            return HttpResponseRedirect(
+                reverse("audition_management:settings"))
         else:
             form = PasswordChangeForm(request.user, request.POST)
             if form.is_valid():

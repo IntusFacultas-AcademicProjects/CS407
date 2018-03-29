@@ -78,9 +78,8 @@
                         <tr style="background-color:white;">
                             <th>Role</th>
                             <th>Casting Agent</th>
-                            <th>Date</th>
-                            <th>Tags</th>
                             <th>Location</th>
+                            <th>Tags</th>
                             <th>&nbsp;</th>
                         </tr>
                     </thead>
@@ -88,10 +87,9 @@
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
                             <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
-                            <td>(( role.role.date ))</td>
+                            <td>(( role.role.address ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
-                            <td>(( role.role.address ))</td>
                             <td>
                                 <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
                             </td>
@@ -113,9 +111,8 @@
                         <tr style="background-color:white;">
                             <th>Role</th>
                             <th>Casting Agent</th>
-                            <th>Date</th>
-                            <th>Tags</th>
                             <th>Location</th>
+                            <th>Tags</th>
                             <th>&nbsp;</th>
                         </tr>
                     </thead>
@@ -123,10 +120,9 @@
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
                             <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
-                            <td>(( role.role.date ))</td>
+                            <td>(( role.role.address ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
-                            <td>(( role.role.address ))</td>
                             <td>
                                 <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
                             </td>
