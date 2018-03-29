@@ -22,6 +22,11 @@ def signup(request):
                 print(request.POST.get("account_type"))
             messages.success(request, "Account created. Please log in.")
             return HttpResponseRedirect(reverse('session:login'))
+        else:
+            return render(request, 'session/signup.html', {
+                'form': form,
+                "is_casting": False
+            })
     else:
         form = SignUpForm()
         return render(request, 'session/signup.html', {

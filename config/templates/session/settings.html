@@ -669,6 +669,10 @@
                         app.insert = "";
                     }
                     else {
+                        if (app.insert[app.insert.length - 1] == '"' || app.insert[app.insert.length - 1] == "'" || app.insert[app.insert.length - 1] == '\\') {
+                            console.log("illegal character");
+                            app.insert = app.insert.substring(0, app.insert.length - 1)
+                        }
                         // do nothing, typing
                     }
                 },
