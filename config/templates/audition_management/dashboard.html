@@ -141,9 +141,9 @@
     var unparsed2 = "{{all_roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = processJS(unparsed)
+        parsed = JSON.parse(unparsed)
         unparsed2 = unparsed2.split("&#39;").join("\"").split("&quot;").join("")
-        parsed2 = processJS(unparsed2)    
+        parsed2 = JSON.parse(unparsed2)    
          $("#results").floatThead({
             scrollContainer: function($table){
                 return $table.closest('.wrapper');
