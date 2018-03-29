@@ -452,7 +452,12 @@
     var unparsed = "{{roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = JSON.parse(unparsed)    
+        if (unparsed.length > 0) {
+            parsed = JSON.parse(unparsed);
+        }
+        else {
+            parsed = [];
+        }
          $("#results").floatThead({
             scrollContainer: function($table){
                 return $table.closest('.wrapper');
