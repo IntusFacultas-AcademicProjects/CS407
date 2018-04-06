@@ -22,10 +22,13 @@ class AuditionAccount(models.Model):
         blank=True,
         null=True,
     )
-    gender = models.IntegerField("gender", choices=GENDER_CHOICES, blank=True, null=True)
+    gender = models.IntegerField(
+        "gender", choices=GENDER_CHOICES, blank=True, null=True)
     age = models.IntegerField("age", blank=True, null=True)
-    ethnicity = models.IntegerField("ethnicity", choices=ETHNICITY_CHOICES, blank=True, null=True)
-    location = models.CharField("location", max_length=512, blank=True, null=True)
+    ethnicity = models.IntegerField(
+        "ethnicity", choices=ETHNICITY_CHOICES, blank=True, null=True)
+    location = models.CharField(
+        "location", max_length=512, blank=True, null=True)
 
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
@@ -178,3 +181,35 @@ class Alert(models.Model):
         on_delete=models.CASCADE,
         related_name="messages",
     )
+
+
+class Message(models.Model):
+    sender = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="sent_messages"
+    )
+    receiver = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="received_messages"
+    )
+    timestamp = models.DateTimeField(auto_now=True)
+    text = models.CharField("Text", max_length=1000)
+
+    def as_dict(self):
+        return {
+            "timestamp": str(self.timestamp),
+            "text": self.text,
+            "sender": {
+                "pk": self.sender.id
+            },
+            "receiver": {
+                "pk": self.receiver.id
+            }
+        }
+
+    def __str__(self):
+        return "%s %s %s to %s %s: %s" % (
+            str(self.timestamp), self.sender.first_name, self.sender.last_name,
+            self.receiver.first_name, self.receiver.last_name, self.text)

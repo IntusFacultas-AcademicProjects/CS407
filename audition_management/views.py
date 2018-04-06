@@ -1,4 +1,4 @@
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert)
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -254,7 +254,8 @@ class SettingsView(LoginRequiredMixin, View):
                         "portfolio_formset": portfolioformset,
                     })
         elif request.POST.get("form_type") == 'audition_form':
-            form = AuditionSettingsForm(request.POST, instance=request.user.audition_account)
+            form = AuditionSettingsForm(
+                request.POST, instance=request.user.audition_account)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -533,7 +534,8 @@ class EditRoleView(LoginRequiredMixin, View):
                     print(form.cleaned_data)
                     role = Role.objects.get(pk=pk)
                     form = EditRoleForm(instance=role, prefix="form1")
-                    messages.error(request, "Please review your data and try again.")
+                    messages.error(
+                        request, "Please review your data and try again.")
                     return render(
                         request,
                         'audition_management/editRole.html',
@@ -593,3 +595,47 @@ class MessageView(LoginRequiredMixin, View):
         else:
             alert.delete()
             return HttpResponseRedirect(request.POST.get("url_of_request"))
+
+
+class ChatView(LoginRequiredMixin, View):
+    """
+    This does not return a HTML document. This is an AJAX only view
+    specifically for use with a Vue document.
+    """
+
+    def get(self, request):
+        user = request.user
+        messaged_users = user.sent_messages.all().values('receiver').distinct()
+        message_chats = []
+        for receiver in messaged_users:
+            messages_sent = user.sent_messages.filter(
+                receiver=receiver["receiver"])
+            messages_received = user.received_messages.filter(
+                sender=receiver["receiver"])
+            messages = messages_sent | messages_received
+            message_logs = [obj.as_dict() for obj in messages]
+            receiver_django = User.objects.get(pk=receiver["receiver"])
+            message_chats.append({
+                "participant": {
+                    "pk": receiver["receiver"],
+                    "name": receiver_django.first_name + " " + 
+                            receiver_django.last_name
+                },
+                "messages": json.dumps(message_logs)
+            })
+        return JsonResponse({
+            "data": message_chats,
+        })
+
+    def post(self, request):
+        # in all fairness, this is pretty unsafe. No checks made.
+        receiver_pk = request.POST.get("receiver")
+        text = request.POST.get("text")
+        sender = request.user
+        receiver = User.objects.get(pk=receiver_pk)
+        Message.objects.create(
+            receiver=receiver,
+            sender=sender,
+            text=text
+        )
+        return HttpResponse("Ok", status=200)
