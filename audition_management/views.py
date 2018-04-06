@@ -613,6 +613,7 @@ class ChatView(LoginRequiredMixin, View):
             messages_received = user.received_messages.filter(
                 sender=receiver["receiver"])
             messages = messages_sent | messages_received
+            messages = messages.order_by("-timestamp")
             message_logs = [obj.as_dict() for obj in messages]
             receiver_django = User.objects.get(pk=receiver["receiver"])
             message_chats.append({
