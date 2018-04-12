@@ -7,6 +7,9 @@
             </a>
         </div>
             <ul class="nav navbar-nav navbar-right">
+                <li class="nav-item">
+                    <a class="nav-link" style="cursor:pointer" href="{% url 'audition_management:conversations' %}">Messages</a>
+                </li>
                 {% if is_casting %}
                 <li class="nav-item">
                     <a class="nav-link" style="cursor:pointer" href="{% url 'audition_management:create' %}">Create Posting</a>

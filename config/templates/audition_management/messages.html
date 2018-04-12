@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Messages{% endblock %}
+
+{% block content %}
+<div id="messageDiv">
+	<div class="row">
+		<div class="col-lg-4">
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<h1>Conversations</h1>
+				</div>
+				<div class="panel-body">
+					<table class="table table-hover table-striped">
+	                    <tbody>
+	                    	<tr v-for="name in names">
+	                    		<td><h4>((name.name))</h4></td>
+	                    		<td>
+	                    			<a v-on:click="fetchMessages(name.pk)" class="btn btn-primary pull-right"> View </a>
+	                    		</td>
+	                    	</tr>
+	                    </tbody>
+                	</table>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-8">
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<h1>Messages</h1>
+				</div>
+				<div class="panel-body">
+					<template v-for="message in messages">
+						<div class="panel panel-primary">
+							<div class="panel-heading">((message.sender)): <span class="pull-right">((message.timestamp))</span></div>
+							<div class="panel-body">((message.text))</div>
+						</div>
+					</template>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+    var unparsed = "{{data}}"
+    $(function() {
+        unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
+        parsed = processJS(unparsed)
+        MessageApp = new Vue({
+            el: "#messageDiv",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+            	rawData: [],
+            	names: [],
+            	messages: [],
+            },
+            mounted: function() {
+                var internalApp = this;
+                this.rawData = parsed;
+                console.log(this.rawData);
+                for (i = 0; i < this.rawData.length; i++) {
+                	this.names.push(this.rawData[i].participant);
+            	}
+
+            	console.log(this.rawData[0].messages);
+            	for (j = 0; j < this.rawData[0].messages.length; j++) {
+            		this.messages.push(this.rawData[0].messages[j]);
+            	}
+            },
+            methods: {
+            	fetchMessages: function(num) {
+            		newMessages = []
+            		for (i = 0; i < MessageApp.rawData.length; i++) {
+            			if (MessageApp.rawData[i].participant.pk == num) {
+            				for (j = 0; j < MessageApp.rawData[i].messages.length; j++) {
+            					newMessages.push(MessageApp.rawData[i].messages[j]);
+            				}
+            			}
+            		}
+            		MessageApp.messages = newMessages;
+            	},
+            }
+        })
+    })
+</script>
+{% endblock js %}

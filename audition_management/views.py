@@ -28,7 +28,7 @@ def is_casting_agent(current_user):
     """
     try:
         current_user.audition_account
-        return False
+        return Falseob
     except AuditionAccount.DoesNotExist:
         try:
             current_user.casting_account
@@ -587,6 +587,32 @@ class InvitationView(LoginRequiredMixin, View):
 
 
 class MessageView(LoginRequiredMixin, View):
+
+    """
+    def get(self, request, pk):
+        
+            user = request.user
+            otherUser = User.objects.get(id=pk)
+            messages = []
+            sentMessages = Message.objects.filter(sender = user).filter(receiver = otherUser);
+            receivedMessages = Message.objects.filter(receiver = user).filter(sender = otherUser);
+            for message in sentMessages:
+                messages.append(message)
+            for message in receivedMessages:
+                messages.append(message)
+
+            messages = sorted(messages, key=lambda message: message.timestamp)
+            dictionaries = [obj.as_dict() for obj in messages]
+            return render(request, 'audition_management/chats.html', {
+                'messages': dictionaries
+            })
+    """
+
+    def get(self, request, pk):
+        return render(request, 'audition_management/chats.html', {
+
+            })
+
     def post(self, request, pk):
         alert = Alert.objects.get(pk=pk)
         if request.user != alert.account:
@@ -624,6 +650,7 @@ class ChatView(LoginRequiredMixin, View):
                 },
                 "messages": json.dumps(message_logs)
             })
+        print(message_chats)
         return JsonResponse({
             "data": message_chats,
         })
@@ -640,3 +667,42 @@ class ChatView(LoginRequiredMixin, View):
             text=text
         )
         return HttpResponse("Ok", status=200)
+
+class ConversationView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        
+            user = request.user
+            messaged_users = user.sent_messages.all().values('receiver').distinct()
+            message_chats = []
+            for receiver in messaged_users:
+                messages_sent = user.sent_messages.filter(
+                    receiver=receiver["receiver"])
+                messages_received = user.received_messages.filter(
+                    sender=receiver["receiver"])
+                messages = messages_sent | messages_received
+                messages = messages.order_by("timestamp")
+                message_logs = [obj.as_dict() for obj in messages]
+                receiver_django = User.objects.get(pk=receiver["receiver"])
+                message_chats.append({
+                    "participant": {
+                        "pk": receiver["receiver"],
+                        "name": receiver_django.first_name + " " + 
+                                receiver_django.last_name
+                    },
+                    "messages": message_logs
+                })
+            print(message_chats)
+            return render(request, 'audition_management/messages.html', {
+                'user': user,
+                'data': message_chats
+
+            })
+        
+class SendView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        form = RoleCreationForm(instance=request.user)
+        return render(request, 'audition_management/send.html', {
+                'form': form
+            })

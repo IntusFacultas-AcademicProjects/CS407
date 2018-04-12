@@ -88,6 +88,7 @@
 	            					{% endif %}
 	            				</tbody>
 	            			</table>
+	            			<a href="{% url 'audition_management:send' pk=external_user.profile.id %}" class="btn btn-primary">Send Message</a>
 	            		</div>
 	            	</div>
 	            	{% if not user_is_casting %}
@@ -272,7 +273,7 @@
                 displayedRoles: [],
                 allRoles: [],
                 url: "{% url 'audition_management:edit-role' pk=0 %}",
-                viewUrl: "{% url 'audition_management:role' pk=0 %}"
+                viewUrl: "{% url 'audition_management:role' pk=0 %}",
             },
             mounted: function() {
                 // we save the 'this' keyword here because once we enter the next scope
@@ -387,7 +388,7 @@
                 },
                 setUrl: function(num) {
                     return filterApp.url.replace("0", num);
-                }
+                },
             },
         })
     })
