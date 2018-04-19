@@ -6,18 +6,18 @@
 {% block content %}
 <div id="messageDiv">
 	<div class="row">
-		<div class="col-lg-4">
+		<div class="col-lg-3">
 			<div class="panel panel-info">
 				<div class="panel-heading">
-					<h1>Conversations</h1>
+					<h1 class="text-center">Conversations</h1>
 				</div>
-				<div class="panel-body">
+				<div class="panel-body" style="overflow-y: auto; height: 603px;">
 					<table class="table table-hover table-striped">
 	                    <tbody>
-	                    	<tr v-for="name in names">
-	                    		<td><h4>((name.name))</h4></td>
+	                    	<tr v-for="participant in participants">
+	                    		<td><h4>((participant.name))</h4></td>
 	                    		<td>
-	                    			<a v-on:click="fetchMessages(name.pk)" class="btn btn-primary pull-right"> View </a>
+	                    			<a v-on:click="fetchMessages(participant)" class="btn btn-primary pull-right"> View </a>
 	                    		</td>
 	                    	</tr>
 	                    </tbody>
@@ -25,18 +25,32 @@
 				</div>
 			</div>
 		</div>
-		<div class="col-lg-8">
+		<div class="col-lg-9">
 			<div class="panel panel-info">
 				<div class="panel-heading">
-					<h1>Messages</h1>
+					<h1 class="text-center">Messages</h1>
 				</div>
-				<div class="panel-body">
+				<div class="panel-body scroll_thing" style="overflow-y: auto; height: 445px;">
 					<template v-for="message in messages">
-						<div class="panel panel-primary">
-							<div class="panel-heading">((message.sender)): <span class="pull-right">((message.timestamp))</span></div>
-							<div class="panel-body">((message.text))</div>
-						</div>
+						<b v-text="formatName(message.sender.pk)"> </b> 
+						<b  class="pull-right" v-text="formatTime(message.timestamp)"> </b>
+						<div class="well">((message.text))</div>
 					</template>
+				</div>
+			</div>
+			<div class="panel panel-info">
+				<div class="panel-body">
+					<div class="form-group">
+				  		<label for="comment">Send a new message</label>
+				  		<div class="row">
+				  			<div class="col-lg-10">
+				  				<textarea class="form-control" rows="2" id="messageText"></textarea>
+				  			</div>
+				  			<div class="col-lg-2 text-center">
+				  				<a v-on:click="sendMessage()" class="btn btn-primary btn-lg "> Send </a>
+				  			</div>
+				  		</div>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -46,10 +60,8 @@
 
 {% block js %}
 <script type="text/javascript">
-    var unparsed = "{{data}}"
+
     $(function() {
-        unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = processJS(unparsed)
         MessageApp = new Vue({
             el: "#messageDiv",
             delimiters: ["((","))"],
@@ -57,34 +69,94 @@
             // These cannot be set to undefined/null. 
             data: {
             	rawData: [],
-            	names: [],
+            	participants: [],
             	messages: [],
+            	currentParticipant: "",
+            	userName: "",
             },
             mounted: function() {
-                var internalApp = this;
-                this.rawData = parsed;
-                console.log(this.rawData);
-                for (i = 0; i < this.rawData.length; i++) {
-                	this.names.push(this.rawData[i].participant);
-            	}
+            	var internalApp = this;
 
-            	console.log(this.rawData[0].messages);
-            	for (j = 0; j < this.rawData[0].messages.length; j++) {
-            		this.messages.push(this.rawData[0].messages[j]);
-            	}
+            	$.get('/messages/', function(data) {
+            		internalApp.rawData = data;
+    				internalApp.getParticipants()
+    				internalApp.fetchMessages(internalApp.participants[0]);
+    			})
+
             },
             methods: {
-            	fetchMessages: function(num) {
+            	fetchMessages: function(participant) {
             		newMessages = []
-            		for (i = 0; i < MessageApp.rawData.length; i++) {
-            			if (MessageApp.rawData[i].participant.pk == num) {
-            				for (j = 0; j < MessageApp.rawData[i].messages.length; j++) {
-            					newMessages.push(MessageApp.rawData[i].messages[j]);
+            		for (i = 0; i < MessageApp.rawData.data.length; i++) {
+            			if (MessageApp.rawData.data[i].participant.pk == participant.pk) {
+            				parsedMessages = JSON.parse(MessageApp.rawData.data[i].messages)
+            				for (j = 0; j < parsedMessages.length; j++) {
+            					newMessages.push(parsedMessages[j]);
             				}
             			}
             		}
             		MessageApp.messages = newMessages;
+            		MessageApp.currentParticipant = participant;
+            		$('.scroll_thing').scrollTop($('.scroll_thing')[0].scrollHeight)
+            		
             	},
+            	sendMessage: function() {
+            		var receiver = MessageApp.currentParticipant.pk;
+            		console.log(receiver);
+            		var text = document.getElementById("messageText").value;
+            		
+            		//check for empty message 
+            		if (text == "") {
+            			return;
+            		}
+
+            		$.post('/messages/', {"receiver": receiver, "text": text, "csrfmiddlewaretoken": "{{csrf_token}}" }, function(data) {
+            			document.getElementById("messageText").value = "";
+            			
+            			$.get('/messages/', function(data2) {
+		            		MessageApp.rawData = data2;
+		            		MessageApp.getParticipants();
+
+		    				$(".scroll_thing").stop().animate({ scrollTop: $(".scroll_thing")[0].scrollHeight}, 1000);
+		    				MessageApp.fetchMessages(MessageApp.currentParticipant);
+    					})
+            		})
+            	},
+
+            	formatName: function(num) {
+            		if (num == MessageApp.currentParticipant.pk) {
+            			return MessageApp.currentParticipant.name;
+            		}
+
+            		else {
+            			return num;
+            		}
+            	},
+
+            	formatTime: function(num) {
+            		return moment(num).format('MMMM Do YYYY, hh:mm a');
+            		
+            	},
+
+            	getParticipants: function() {
+            		keyValues = [];
+            		for (i = 0; i < MessageApp.rawData.data.length; i++) {
+            			parsedMessages = JSON.parse(MessageApp.rawData.data[i].messages)
+            			var person = {name: MessageApp.rawData.data[i].participant.name, timestamp: moment(parsedMessages[parsedMessages.length - 1].timestamp), pk: MessageApp.rawData.data[i].participant.pk};
+            			keyValues.push(person);
+            		}
+
+            		function compare(a,b) {
+						if (a.timestamp > b.timestamp)
+							return -1;
+					  	if (a.timestamp < b.timestamp)
+					    	return 1;
+					  	return 0;
+					}
+
+					keyValues.sort(compare);
+					MessageApp.participants = keyValues;
+            	}
             }
         })
     })

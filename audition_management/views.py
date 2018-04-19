@@ -588,26 +588,6 @@ class InvitationView(LoginRequiredMixin, View):
 
 class MessageView(LoginRequiredMixin, View):
 
-    """
-    def get(self, request, pk):
-        
-            user = request.user
-            otherUser = User.objects.get(id=pk)
-            messages = []
-            sentMessages = Message.objects.filter(sender = user).filter(receiver = otherUser);
-            receivedMessages = Message.objects.filter(receiver = user).filter(sender = otherUser);
-            for message in sentMessages:
-                messages.append(message)
-            for message in receivedMessages:
-                messages.append(message)
-
-            messages = sorted(messages, key=lambda message: message.timestamp)
-            dictionaries = [obj.as_dict() for obj in messages]
-            return render(request, 'audition_management/chats.html', {
-                'messages': dictionaries
-            })
-    """
-
     def get(self, request, pk):
         return render(request, 'audition_management/chats.html', {
 
@@ -639,7 +619,7 @@ class ChatView(LoginRequiredMixin, View):
             messages_received = user.received_messages.filter(
                 sender=receiver["receiver"])
             messages = messages_sent | messages_received
-            messages = messages.order_by("-timestamp")
+            messages = messages.order_by("timestamp")
             message_logs = [obj.as_dict() for obj in messages]
             receiver_django = User.objects.get(pk=receiver["receiver"])
             message_chats.append({
@@ -702,7 +682,14 @@ class ConversationView(LoginRequiredMixin, View):
 class SendView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
-        form = RoleCreationForm(instance=request.user)
+        receiver = User.objects.get(pk=pk)
+        is_casting = is_casting_agent(receiver)
+        if is_casting:
+            receiver = receiver.casting_account
+        else:
+            receiver = user.audition_account
+        print(receiver)
         return render(request, 'audition_management/send.html', {
-                'form': form
+                'receiver': receiver,
+                'pk': pk
             })

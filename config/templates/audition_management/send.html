@@ -1,12 +1,55 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
 
-{% block title %}Messages{% endblock %}
+{% block title %}Send Message{% endblock %}
 
 {% block content %}
+<div class="row" id ="sendDiv">
+    <div class="col-sm-offset-3 col-sm-6">
+        <div class="row">
+            <div class="panel panel-primary">
+                <div class="panel-heading text-center">
+                    <h2>Compose Message</h2>
+                </div>
+                <div class="panel-body">
+                	<div class="form-group">
+				  		<label for="comment">Send a new message to {{receiver}}</label>
 
+				  		<textarea class="form-control" rows="12" id="messageText"></textarea>
+				  		<br>
+				  		<a v-on:click="sendMessage()" class="btn btn-primary pull-right"> Send </a>
+					</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block js %}
+<script type="text/javascript">
+	$(function() {
+        SendApp = new Vue({
+            el: "#sendDiv",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
 
+            },
+            methods: {
+            	sendMessage: function() {
+            		var text = document.getElementById("messageText").value;
+					var nextUrl = '/user/' + '{{pk}}';
+					console.log(nextUrl);
+					//$.post('/messages/', {"receiver": {{pk}}, "text": text, "csrfmiddlewaretoken": "{{csrf_token}}" }, function(data) {
+			            			document.getElementById("messageText").value = "";
+			            			$.get(nextUrl)
+			        //})
+            	}
+            	
+            }
+        })
+    })
+</script>
 {% endblock js %}
