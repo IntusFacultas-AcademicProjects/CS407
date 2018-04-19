@@ -52,6 +52,10 @@ class CastingAccount(models.Model):
         blank=True,
         null=True,
     )
+    location = models.CharField(
+        "location", max_length=512, blank=True, null=True)
+    phone = models.CharField(
+        "phone", max_length=16, blank=True, null=True)
 
     def __str__(self):
         return "%s %s" % (self.profile.first_name, self.profile.last_name)
@@ -77,6 +81,7 @@ class Role(models.Model):
     agent = models.ForeignKey(CastingAccount, on_delete=models.CASCADE,
                               related_name="roles")
     status = models.IntegerField("Status", choices=STATUS_CHOICES, default=1)
+    views = models.IntegerField("Views")
 
     def __str__(self):              # __unicode__ on Python 2
         return "%s, %s" % (self.name, self.description)

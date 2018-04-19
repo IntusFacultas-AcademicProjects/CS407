@@ -16,7 +16,7 @@ import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
-    AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+    AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
 
 
 def is_casting_agent(current_user):
@@ -173,6 +173,9 @@ class SettingsView(LoginRequiredMixin, View):
             # grab all events made by the user
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
+            # this form is used to modify account non-password settings
+            castingform = CastingSettingsForm(
+                instance=request.user.audition_account)
         else:
             # grab all applications made by this auditioner
             try:
@@ -197,7 +200,8 @@ class SettingsView(LoginRequiredMixin, View):
                 "change_password_form": change_password_form,
                 "account_type": account_type,
                 "is_casting": is_casting_agent(request.user),
-                "roles": events
+                "roles": events,
+                "casting_form": castingform
             })
         else:
             return render(request, 'session/settings.html', {
@@ -228,12 +232,15 @@ class SettingsView(LoginRequiredMixin, View):
                     # grab all events made by the user
                     events = request.user.roles.all()
                     events = [obj.as_dict() for obj in events]
+                    castingform = CastingSettingsForm(
+                        instance=request.user.casting_account)
                     return render(request, 'session/settings.html', {
                         'form': form,
                         "change_password_form": change_password_form,
                         "account_type": account_type,
                         "is_casting": is_casting_agent(request.user),
-                        "roles": events
+                        "roles": events,
+                        "casting_form": castingform
                     })
                 else:
                     # grab all applications made by this auditioner
@@ -274,6 +281,29 @@ class SettingsView(LoginRequiredMixin, View):
                     "is_casting": is_casting_agent(request.user),
                     "audition_form": form,
                     "portfolio_formset": portfolio_formset
+                })
+        elif request.POST.get("form_type") == 'casting_form':
+            form = CastingSettingsForm(
+                request.POST, instance=request.user.audition_account)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                # grab all events made by the user
+                events = request.user.roles.all()
+                events = [obj.as_dict() for obj in events]
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "roles": events,
+                    "casting_form": form
                 })
         elif request.POST.get("form_type") == 'tag_formset':
             update_tags = json.loads(request.POST.get("update_tags"))
@@ -367,6 +397,7 @@ class RoleView(LoginRequiredMixin, View):
         role = Role.objects.get(id=pk)
         auditions = role.applications.all()
         auditions = [obj.as_dict() for obj in auditions]
+        role.views = role.views + 1
         return render(request, 'audition_management/role.html', {
             "role": role,
             "is_casting": is_casting_agent(request.user),
@@ -458,6 +489,7 @@ class RoleCreationView(LoginRequiredMixin, View):
                 if form.is_valid() and form.has_changed():
                     event = form.save(commit=False)
                     event.role = role
+                    role.views = 0
                     event.save()
             messages.success(
                 request, "Role successfully created.")
