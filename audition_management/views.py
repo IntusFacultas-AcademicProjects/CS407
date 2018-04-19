@@ -1,3 +1,4 @@
+import geopy as geopy
 from django.http import HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
@@ -17,6 +18,9 @@ import json
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
     AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+import usaddress
+import geopy
+from geopy.geocoders import Nominatim
 
 
 def is_casting_agent(current_user):
@@ -67,6 +71,40 @@ def get_user(current_user):
         except CastingAccount.DoesNotExist:
             pass
     return user
+
+
+def address_reformat(address):
+    dict = usaddress.parse(address)
+    return "{} {} {} {} {}".format(
+        dict['AddressNumber'],
+        dict['StreetName'],
+        dict['StreetNamePostType'],
+        dict['PlaceName'],
+        dict['StateName']
+    )
+
+
+# Returns the miles between two addresses
+def get_distance_between_addresses(address1, address2):
+    # Attempt to reformat addresses to something more parable.
+    # usaddress is fairly robust so if this fails we have no hope and should return -1 to signify an error
+    try:
+        address1 = address_reformat(address1)
+        address2 = address_reformat(address2)
+
+        # Get the location objects of the addresses
+        geolocator = Nominatim()
+        location1 = geolocator.geocode(address1)
+        location2 = geolocator.geocode(address2)
+
+        # Get the coordinates of the addresses
+        cordinates1 = (location1.latitude, location1.longitude)
+        cordinates2 = (location2.latitude, location2.longitude)
+
+        # Get the distance between the two addresses
+        return geopy.distance.vincenty(cordinates1, cordinates2).miles
+    except Exception:
+        return -1
 
 
 class DashboardView(LoginRequiredMixin, View):
