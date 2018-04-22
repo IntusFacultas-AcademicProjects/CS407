@@ -17,6 +17,10 @@ import json
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
     AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+from pygeocoder import Geocoder
+import geopy.distance
+from pygeolib import GeocoderError
+from operator import itemgetter, attrgetter
 
 
 def is_casting_agent(current_user):
@@ -83,7 +87,44 @@ class DashboardView(LoginRequiredMixin, View):
         return role_tag_synonyms
 
     def get_roles(self, request):
-        #roles = Role.objects.all()
+        def compare_roles(a, b):
+            print(a["score"])
+            print(b["score"])
+            if (a["score"] > b["score"]):
+                return 1
+            elif (b["score"] > a["score"]):
+                return -1
+            else:
+                if a["distance"] > b["distance"]:
+                    return 1
+                elif b["distance"] > a["distance"]:
+                    return -1
+                else:
+                    return 0
+
+        def cmp_to_key(mycmp):
+            class K:
+                def __init__(self, obj, *args):
+                    self.obj = obj
+
+                def __lt__(self, other):
+                    return mycmp(self.obj, other.obj) < 0
+
+                def __gt__(self, other):
+                    return mycmp(self.obj, other.obj) > 0
+
+                def __eq__(self, other):
+                    return mycmp(self.obj, other.obj) == 0
+
+                def __le__(self, other):
+                    return mycmp(self.obj, other.obj) <= 0
+
+                def __ge__(self, other):
+                    return mycmp(self.obj, other.obj) >= 0
+
+                def __ne__(self, other):
+                    return mycmp(self.obj, other.obj) != 0
+            return K
         roles = Role.objects.filter(status=1)
         account = request.user.audition_account
         tags = account.tags.all()
@@ -105,9 +146,31 @@ class DashboardView(LoginRequiredMixin, View):
                             role_score += 1
                             break
             if role_score > 0:
-                matching_roles.append({'role': role, 'score': role_score})
+                # distance is a big number at first so low priority until changed
+                distance = 1000000000
+                try:
+                    role_location = Geocoder.geocode(role.studio_address)
+                    user_location = Geocoder.geocode(account.location)
+                    distance = geopy.distance.vincenty(
+                        role_location.coordinates,
+                        user_location.coordinates
+                    ).km
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        print("location doesn't exist")
+                    else:
+                        print("API Failure")
+                matching_roles.append(
+                    {
+                        'role': role,
+                        'score': role_score,
+                        'distance': distance
+                    }
+                )
+
         matching_roles_sorted = sorted(
-            matching_roles, key=lambda k: k['score'], reverse=True)
+            matching_roles, key=cmp_to_key(compare_roles), reverse=True)
+        print(matching_roles_sorted)
         return [r['role'] for r in matching_roles_sorted]
 
     def get(self, request):
@@ -619,8 +682,8 @@ class ChatView(LoginRequiredMixin, View):
             message_chats.append({
                 "participant": {
                     "pk": receiver["receiver"],
-                    "name": receiver_django.first_name + " " + 
-                            receiver_django.last_name
+                    "name": receiver_django.first_name + " " +
+                    receiver_django.last_name
                 },
                 "messages": json.dumps(message_logs)
             })
