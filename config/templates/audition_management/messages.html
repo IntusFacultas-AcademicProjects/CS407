@@ -12,16 +12,15 @@
 					<h1 class="text-center">Conversations</h1>
 				</div>
 				<div class="panel-body" style="overflow-y: auto; height: 603px;">
-					<table class="table table-hover table-striped">
-	                    <tbody>
-	                    	<tr v-for="participant in participants">
-	                    		<td><h4>((participant.name))</h4></td>
-	                    		<td>
-	                    			<a v-on:click="fetchMessages(participant)" class="btn btn-primary pull-right"> View </a>
-	                    		</td>
-	                    	</tr>
-	                    </tbody>
-                	</table>
+                    <div class="panel panel-info">
+                         <template v-for="participant in participants">
+                            <div class="well">
+                                <h4>((participant.name))<small v-text="formatTime(participant.timestamp, 0)" class="pull-right"></small></h4>
+                                <a v-on:click="fetchMessages(participant)" class="btn btn-primary btn-sm pull-right"> View </a>
+                                <p v-text="formatPreview(participant.lastMessage)" class="text-muted"></p>
+                            </div>
+                        </template>
+                    </div>
 				</div>
 			</div>
 		</div>
@@ -33,7 +32,7 @@
 				<div class="panel-body scroll_thing" style="overflow-y: auto; height: 445px;">
 					<template v-for="message in messages">
 						<b v-text="formatName(message.sender.pk)"> </b> 
-						<b  class="pull-right" v-text="formatTime(message.timestamp)"> </b>
+						<b class="pull-right" v-text="formatTime(message.timestamp, 1)"> </b>
 						<div class="well">((message.text))</div>
 					</template>
 				</div>
@@ -60,7 +59,8 @@
 
 {% block js %}
 <script type="text/javascript">
-
+	var userName = "{{request.user.first_name}} {{request.user.last_name}}"
+	var userPk = "{{request.user.pk}}"
     $(function() {
         MessageApp = new Vue({
             el: "#messageDiv",
@@ -125,16 +125,23 @@
 
             	formatName: function(num) {
             		if (num == MessageApp.currentParticipant.pk) {
-            			return MessageApp.currentParticipant.name;
+            			return MessageApp.currentParticipant.name + ':';
             		}
 
             		else {
-            			return num;
+            			return userName + ':';
             		}
             	},
 
-            	formatTime: function(num) {
-            		return moment(num).format('MMMM Do YYYY, hh:mm a');
+            	formatTime: function(num, flag) {
+            		if (flag == 0) {
+            			console.log('triggered');
+						return moment(num).format('MM/DD/YY');
+            		}
+
+            		else {
+            			return moment(num).format('MMMM Do YYYY, hh:mm a');
+            		}
             		
             	},
 
@@ -142,7 +149,9 @@
             		keyValues = [];
             		for (i = 0; i < MessageApp.rawData.data.length; i++) {
             			parsedMessages = JSON.parse(MessageApp.rawData.data[i].messages)
-            			var person = {name: MessageApp.rawData.data[i].participant.name, timestamp: moment(parsedMessages[parsedMessages.length - 1].timestamp), pk: MessageApp.rawData.data[i].participant.pk};
+                        console.log(parsedMessages);
+            			var person = {name: MessageApp.rawData.data[i].participant.name, timestamp: moment(parsedMessages[parsedMessages.length - 1].timestamp), pk: MessageApp.rawData.data[i].participant.pk, lastMessage: parsedMessages[parsedMessages.length - 1].text};
+                        console.log(person);
             			keyValues.push(person);
             		}
 
@@ -156,7 +165,16 @@
 
 					keyValues.sort(compare);
 					MessageApp.participants = keyValues;
-            	}
+            	},
+
+                formatPreview: function(text) {
+                    var newText = text.substring(0,70);
+                    if (text.length > newText.length) {
+                        newText += '...';
+                    }
+                    newText = "\"" + newText + "\"";
+                    return newText;
+                }
             }
         })
     })

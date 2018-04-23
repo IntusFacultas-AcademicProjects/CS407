@@ -34,18 +34,13 @@
             delimiters: ["((","))"],
             // This is data that needs to be 2 way bound (such as the filter input)
             // These cannot be set to undefined/null. 
-            data: {
-
-            },
             methods: {
             	sendMessage: function() {
             		var text = document.getElementById("messageText").value;
-					var nextUrl = '/user/' + '{{pk}}';
-					console.log(nextUrl);
-					//$.post('/messages/', {"receiver": {{pk}}, "text": text, "csrfmiddlewaretoken": "{{csrf_token}}" }, function(data) {
-			            			document.getElementById("messageText").value = "";
-			            			$.get(nextUrl)
-			        //})
+					$.post('/messages/', {"receiver": {{pk}}, "text": text, "csrfmiddlewaretoken": "{{csrf_token}}" }, function(data) {
+                        console.log("triggered");
+                        window.location.href = "{% url 'audition_management:conversations' %}";
+			        })
             	}
             	
             }

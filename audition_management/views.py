@@ -28,7 +28,7 @@ def is_casting_agent(current_user):
     """
     try:
         current_user.audition_account
-        return Falseob
+        return False
     except AuditionAccount.DoesNotExist:
         try:
             current_user.casting_account
