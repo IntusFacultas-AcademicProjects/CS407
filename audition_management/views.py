@@ -203,7 +203,7 @@ class DashboardView(LoginRequiredMixin, View):
         email_user({
             "user": request.user,
             "message": "Fuck you pal"
-        }, "pdelmora@purdue.edu")
+        }, request.user.email)
         if not is_casting_agent(request.user):
             roles = self.get_roles(request)
         else:
