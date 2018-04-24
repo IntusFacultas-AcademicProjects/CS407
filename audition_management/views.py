@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
+    Role, RoleViewModel, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -397,11 +397,15 @@ class RoleView(LoginRequiredMixin, View):
         role = Role.objects.get(id=pk)
         auditions = role.applications.all()
         auditions = [obj.as_dict() for obj in auditions]
-        role.views = role.views + 1
+        if not is_casting_agent(request.user) and not RoleViewModel.objects.get(role=role, account=request.user):
+            newview = RoleViewModel(role=role, account=request.user)
+            newview.save()
+        views = RoleViewModel.objects.filter(role=role).count();
         return render(request, 'audition_management/role.html', {
             "role": role,
             "is_casting": is_casting_agent(request.user),
-            "auditions": auditions
+            "auditions": auditions,
+            "views": views
         })
 
     def post(self, request, pk):
