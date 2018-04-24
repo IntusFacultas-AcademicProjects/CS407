@@ -1,3 +1,5 @@
+import geopy as geopy
+from django.http import HttpResponseRedirect
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
@@ -21,6 +23,9 @@ from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
 from operator import itemgetter, attrgetter
+import usaddress
+import geopy
+from geopy.geocoders import Nominatim
 
 
 def is_casting_agent(current_user):
@@ -714,7 +719,7 @@ class ChatView(LoginRequiredMixin, View):
 class ConversationView(LoginRequiredMixin, View):
 
     def get(self, request):
-        
+
             user = request.user
             messaged_users = user.sent_messages.all().values('receiver').distinct()
             message_chats = []
@@ -730,7 +735,7 @@ class ConversationView(LoginRequiredMixin, View):
                 message_chats.append({
                     "participant": {
                         "pk": receiver["receiver"],
-                        "name": receiver_django.first_name + " " + 
+                        "name": receiver_django.first_name + " " +
                                 receiver_django.last_name
                     },
                     "messages": message_logs
@@ -741,7 +746,7 @@ class ConversationView(LoginRequiredMixin, View):
                 'data': message_chats
 
             })
-        
+
 class SendView(LoginRequiredMixin, View):
 
     def get(self, request, pk):

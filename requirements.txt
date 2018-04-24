@@ -30,3 +30,5 @@ tzlocal==1.4
 virtualenv==15.1.0
 whitenoise==3.2
 wordnet==0.0.1b2
+usaddress
+geopy
