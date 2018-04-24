@@ -1,3 +1,4 @@
+import requests
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
@@ -21,6 +22,15 @@ from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
 from operator import itemgetter, attrgetter
+
+def send_message(to_email, subject, body):
+    return requests.post(
+        "https://api.mailgun.net/v3/sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org/messages",
+        auth=("api", "key-1fb97b84111a8967688b10c4578fd804"),
+        data={"from": "Mailgun Sandbox <postmaster@sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org>",
+              "to": to_email,
+              "subject": subject,
+              "text": body})
 
 
 def is_casting_agent(current_user):
