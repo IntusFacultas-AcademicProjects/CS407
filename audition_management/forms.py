@@ -81,6 +81,18 @@ class AuditionSettingsForm(forms.ModelForm):
                         print("API Failure")
         return data
 
+class CastingSettingsForm(forms.ModelForm):
+    class Meta:
+        model = CastingAccount
+        fields = ('location','phone')
+
+    def clean_location(self):
+        data = self.cleaned_data['location']
+        data = data.replace("'", "")
+        data = data.replace('"', "")
+        data = data.replace('\\', "")
+        return data
+
 
 class PortfolioForm(forms.ModelForm):
     class Meta:
