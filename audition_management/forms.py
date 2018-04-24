@@ -6,6 +6,10 @@ from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
     Select2Widget
 )
+from django.forms.utils import ValidationError
+from pygeocoder import Geocoder
+from pygeolib import GeocoderError
+import time
 
 
 class SettingsForm(forms.ModelForm):
@@ -53,6 +57,28 @@ class AuditionSettingsForm(forms.ModelForm):
         data = data.replace("'", "")
         data = data.replace('"', "")
         data = data.replace('\\', "")
+        try:
+            Geocoder.geocode(data)
+        except GeocoderError as e:
+            if e.status == "ZERO_RESULTS":
+                raise ValidationError(
+                    "Invalid Address",
+                    code='invalid',
+                    params={'value': '42'},
+                )
+            else:
+                time.sleep(2)
+                try:
+                    Geocoder.geocode(data)
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        raise ValidationError(
+                            "Invalid Address",
+                            code='invalid',
+                            params={'value': '42'},
+                        )
+                    else:
+                        print("API Failure")
         return data
 
 class CastingSettingsForm(forms.ModelForm):
@@ -108,6 +134,28 @@ class RoleCreationForm(forms.ModelForm):
         data = data.replace("'", "")
         data = data.replace('"', "")
         data = data.replace('\\', "")
+        try:
+            Geocoder.geocode(data)
+        except GeocoderError as e:
+            if e.status == "ZERO_RESULTS":
+                raise ValidationError(
+                    "Invalid Address",
+                    code='invalid',
+                    params={'value': '42'},
+                )
+            else:
+                time.sleep(2)
+                try:
+                    Geocoder.geocode(data)
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        raise ValidationError(
+                            "Invalid Address",
+                            code='invalid',
+                            params={'value': '42'},
+                        )
+                    else:
+                        print("API Failure")
         return data
 
 
@@ -139,6 +187,28 @@ class EditRoleForm(forms.ModelForm):
         data = data.replace("'", "")
         data = data.replace('"', "")
         data = data.replace('\\', "")
+        try:
+            Geocoder.geocode(data)
+        except GeocoderError as e:
+            if e.status == "ZERO_RESULTS":
+                raise ValidationError(
+                    "Invalid Address",
+                    code='invalid',
+                    params={'value': '42'},
+                )
+            else:
+                time.sleep(2)
+                try:
+                    Geocoder.geocode(data)
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        raise ValidationError(
+                            "Invalid Address",
+                            code='invalid',
+                            params={'value': '42'},
+                        )
+                    else:
+                        print("API Failure")
         return data
 
 

@@ -1,3 +1,4 @@
+import requests
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
@@ -8,7 +9,11 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
+<<<<<<< HEAD
     Role, RoleViewModel, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
+=======
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message, DeletedApplication)
+>>>>>>> origin/master
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -16,7 +21,24 @@ import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
+<<<<<<< HEAD
     AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+=======
+    AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+from pygeocoder import Geocoder
+import geopy.distance
+from pygeolib import GeocoderError
+from operator import itemgetter, attrgetter
+
+def send_message(to_email, subject, body):
+    return requests.post(
+        "https://api.mailgun.net/v3/sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org/messages",
+        auth=("api", "key-1fb97b84111a8967688b10c4578fd804"),
+        data={"from": "Mailgun Sandbox <postmaster@sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org>",
+              "to": to_email,
+              "subject": subject,
+              "text": body})
+>>>>>>> origin/master
 
 
 def is_casting_agent(current_user):
@@ -83,12 +105,51 @@ class DashboardView(LoginRequiredMixin, View):
         return role_tag_synonyms
 
     def get_roles(self, request):
-        #roles = Role.objects.all()
+        def compare_roles(a, b):
+            print(a["score"])
+            print(b["score"])
+            if (a["score"] > b["score"]):
+                return 1
+            elif (b["score"] > a["score"]):
+                return -1
+            else:
+                if a["distance"] > b["distance"]:
+                    return 1
+                elif b["distance"] > a["distance"]:
+                    return -1
+                else:
+                    return 0
+
+        def cmp_to_key(mycmp):
+            class K:
+                def __init__(self, obj, *args):
+                    self.obj = obj
+
+                def __lt__(self, other):
+                    return mycmp(self.obj, other.obj) < 0
+
+                def __gt__(self, other):
+                    return mycmp(self.obj, other.obj) > 0
+
+                def __eq__(self, other):
+                    return mycmp(self.obj, other.obj) == 0
+
+                def __le__(self, other):
+                    return mycmp(self.obj, other.obj) <= 0
+
+                def __ge__(self, other):
+                    return mycmp(self.obj, other.obj) >= 0
+
+                def __ne__(self, other):
+                    return mycmp(self.obj, other.obj) != 0
+            return K
         roles = Role.objects.filter(status=1)
         account = request.user.audition_account
         tags = account.tags.all()
         matching_roles = []
         for role in roles:
+            if account.denied_applications.filter(posting__pk=role.id).count() > 0:
+                continue
             role_score = 0
             for tag in tags:
                 for role_tag in role.tags.all():
@@ -105,9 +166,31 @@ class DashboardView(LoginRequiredMixin, View):
                             role_score += 1
                             break
             if role_score > 0:
-                matching_roles.append({'role': role, 'score': role_score})
+                # distance is a big number at first so low priority until changed
+                distance = 1000000000
+                try:
+                    role_location = Geocoder.geocode(role.studio_address)
+                    user_location = Geocoder.geocode(account.location)
+                    distance = geopy.distance.vincenty(
+                        role_location.coordinates,
+                        user_location.coordinates
+                    ).km
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        print("location doesn't exist")
+                    else:
+                        print("API Failure")
+                matching_roles.append(
+                    {
+                        'role': role,
+                        'score': role_score,
+                        'distance': distance
+                    }
+                )
+
         matching_roles_sorted = sorted(
-            matching_roles, key=lambda k: k['score'], reverse=True)
+            matching_roles, key=cmp_to_key(compare_roles), reverse=True)
+        print(matching_roles_sorted)
         return [r['role'] for r in matching_roles_sorted]
 
     def get(self, request):
@@ -263,6 +346,13 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
+            for tag in request.user.audition_account.tags:
+                if tag.name in AuditionAccount.ETHNICITY_CHOICES or tag.name in AuditionAccount.GENDER_CHOICES:
+                    tag.delete()
+            if form.ethnicity is not None:
+                Tag.objects.create(name=form.ethnicity, account=request.user)
+            if form.gender is not None:
+                Tag.objects.create(name=form.gender, account=request.user)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -425,6 +515,15 @@ class RoleView(LoginRequiredMixin, View):
                 reverse("audition_management:role", args=[role.id]))
         else:
             application_pk = request.POST.get("pk")
+            application = Application.objects.get(pk=application_pk)
+            role = application.posting
+            Alert.objects.create(
+                text="Your application for role # {} has been deleted.".format(role.id),
+                account=application.user.profile)
+            DeletedApplication.objects.create(
+                user=application.user,
+                posting=application.posting
+            )
             Application.objects.get(pk=application_pk).delete()
             messages.success(request, "Application deleted")
             return HttpResponseRedirect(
@@ -623,6 +722,12 @@ class InvitationView(LoginRequiredMixin, View):
 
 
 class MessageView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        return render(request, 'audition_management/chats.html', {
+
+            })
+
     def post(self, request, pk):
         alert = Alert.objects.get(pk=pk)
         if request.user != alert.account:
@@ -649,17 +754,18 @@ class ChatView(LoginRequiredMixin, View):
             messages_received = user.received_messages.filter(
                 sender=receiver["receiver"])
             messages = messages_sent | messages_received
-            messages = messages.order_by("-timestamp")
+            messages = messages.order_by("timestamp")
             message_logs = [obj.as_dict() for obj in messages]
             receiver_django = User.objects.get(pk=receiver["receiver"])
             message_chats.append({
                 "participant": {
                     "pk": receiver["receiver"],
-                    "name": receiver_django.first_name + " " + 
-                            receiver_django.last_name
+                    "name": receiver_django.first_name + " " +
+                    receiver_django.last_name
                 },
                 "messages": json.dumps(message_logs)
             })
+        print(message_chats)
         return JsonResponse({
             "data": message_chats,
         })
@@ -675,4 +781,54 @@ class ChatView(LoginRequiredMixin, View):
             sender=sender,
             text=text
         )
+        Alert.objects.create(
+            text="New message from {}".format(sender.first_name),
+            account=receiver)
+
         return HttpResponse("Ok", status=200)
+
+class ConversationView(LoginRequiredMixin, View):
+
+    def get(self, request):
+        
+            user = request.user
+            messaged_users = user.sent_messages.all().values('receiver').distinct()
+            message_chats = []
+            for receiver in messaged_users:
+                messages_sent = user.sent_messages.filter(
+                    receiver=receiver["receiver"])
+                messages_received = user.received_messages.filter(
+                    sender=receiver["receiver"])
+                messages = messages_sent | messages_received
+                messages = messages.order_by("timestamp")
+                message_logs = [obj.as_dict() for obj in messages]
+                receiver_django = User.objects.get(pk=receiver["receiver"])
+                message_chats.append({
+                    "participant": {
+                        "pk": receiver["receiver"],
+                        "name": receiver_django.first_name + " " + 
+                                receiver_django.last_name
+                    },
+                    "messages": message_logs
+                })
+            print(message_chats)
+            return render(request, 'audition_management/messages.html', {
+                'user': user,
+                'data': message_chats
+
+            })
+        
+class SendView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        receiver = User.objects.get(pk=pk)
+        is_casting = is_casting_agent(receiver)
+        if is_casting:
+            receiver = receiver.casting_account
+        else:
+            receiver = user.audition_account
+        print(receiver)
+        return render(request, 'audition_management/send.html', {
+                'receiver': receiver,
+                'pk': pk
+            })

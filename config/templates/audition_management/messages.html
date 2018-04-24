@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Messages{% endblock %}
+
+{% block content %}
+<div id="messageDiv">
+	<div class="row">
+		<div class="col-lg-3">
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<h1 class="text-center">Conversations</h1>
+				</div>
+				<div class="panel-body" style="overflow-y: auto; height: 603px;">
+                    <div class="panel panel-info">
+                         <template v-for="participant in participants">
+                            <div class="well">
+                                <h4>((participant.name))<small v-text="formatTime(participant.timestamp, 0)" class="pull-right"></small></h4>
+                                <a v-on:click="fetchMessages(participant)" class="btn btn-primary btn-sm pull-right"> View </a>
+                                <p v-text="formatPreview(participant.lastMessage)" class="text-muted"></p>
+                            </div>
+                        </template>
+                    </div>
+				</div>
+			</div>
+		</div>
+		<div class="col-lg-9">
+			<div class="panel panel-info">
+				<div class="panel-heading">
+					<h1 class="text-center">Messages</h1>
+				</div>
+				<div class="panel-body scroll_thing" style="overflow-y: auto; height: 445px;">
+					<template v-for="message in messages">
+						<b v-text="formatName(message.sender.pk)"> </b> 
+						<b class="pull-right" v-text="formatTime(message.timestamp, 1)"> </b>
+						<div class="well">((message.text))</div>
+					</template>
+				</div>
+			</div>
+			<div class="panel panel-info">
+				<div class="panel-body">
+					<div class="form-group">
+				  		<label for="comment">Send a new message</label>
+				  		<div class="row">
+				  			<div class="col-lg-10">
+				  				<textarea class="form-control" rows="2" id="messageText"></textarea>
+				  			</div>
+				  			<div class="col-lg-2 text-center">
+				  				<a v-on:click="sendMessage()" class="btn btn-primary btn-lg "> Send </a>
+				  			</div>
+				  		</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script type="text/javascript">
+	var userName = "{{request.user.first_name}} {{request.user.last_name}}"
+	var userPk = "{{request.user.pk}}"
+    $(function() {
+        MessageApp = new Vue({
+            el: "#messageDiv",
+            delimiters: ["((","))"],
+            // This is data that needs to be 2 way bound (such as the filter input)
+            // These cannot be set to undefined/null. 
+            data: {
+            	rawData: [],
+            	participants: [],
+            	messages: [],
+            	currentParticipant: "",
+            	userName: "",
+            },
+            mounted: function() {
+            	var internalApp = this;
+
+            	$.get('/messages/', function(data) {
+            		internalApp.rawData = data;
+    				internalApp.getParticipants()
+    				internalApp.fetchMessages(internalApp.participants[0]);
+    			})
+
+            },
+            methods: {
+            	fetchMessages: function(participant) {
+            		newMessages = []
+            		for (i = 0; i < MessageApp.rawData.data.length; i++) {
+            			if (MessageApp.rawData.data[i].participant.pk == participant.pk) {
+            				parsedMessages = JSON.parse(MessageApp.rawData.data[i].messages)
+            				for (j = 0; j < parsedMessages.length; j++) {
+            					newMessages.push(parsedMessages[j]);
+            				}
+            			}
+            		}
+            		MessageApp.messages = newMessages;
+            		MessageApp.currentParticipant = participant;
+            		$('.scroll_thing').scrollTop($('.scroll_thing')[0].scrollHeight)
+            		
+            	},
+            	sendMessage: function() {
+            		var receiver = MessageApp.currentParticipant.pk;
+            		console.log(receiver);
+            		var text = document.getElementById("messageText").value;
+            		
+            		//check for empty message 
+            		if (text == "") {
+            			return;
+            		}
+
+            		$.post('/messages/', {"receiver": receiver, "text": text, "csrfmiddlewaretoken": "{{csrf_token}}" }, function(data) {
+            			document.getElementById("messageText").value = "";
+            			
+            			$.get('/messages/', function(data2) {
+		            		MessageApp.rawData = data2;
+		            		MessageApp.getParticipants();
+
+		    				$(".scroll_thing").stop().animate({ scrollTop: $(".scroll_thing")[0].scrollHeight}, 1000);
+		    				MessageApp.fetchMessages(MessageApp.currentParticipant);
+    					})
+            		})
+            	},
+
+            	formatName: function(num) {
+            		if (num == MessageApp.currentParticipant.pk) {
+            			return MessageApp.currentParticipant.name + ':';
+            		}
+
+            		else {
+            			return userName + ':';
+            		}
+            	},
+
+            	formatTime: function(num, flag) {
+            		if (flag == 0) {
+            			console.log('triggered');
+						return moment(num).format('MM/DD/YY');
+            		}
+
+            		else {
+            			return moment(num).format('MMMM Do YYYY, hh:mm a');
+            		}
+            		
+            	},
+
+            	getParticipants: function() {
+            		keyValues = [];
+            		for (i = 0; i < MessageApp.rawData.data.length; i++) {
+            			parsedMessages = JSON.parse(MessageApp.rawData.data[i].messages)
+                        console.log(parsedMessages);
+            			var person = {name: MessageApp.rawData.data[i].participant.name, timestamp: moment(parsedMessages[parsedMessages.length - 1].timestamp), pk: MessageApp.rawData.data[i].participant.pk, lastMessage: parsedMessages[parsedMessages.length - 1].text};
+                        console.log(person);
+            			keyValues.push(person);
+            		}
+
+            		function compare(a,b) {
+						if (a.timestamp > b.timestamp)
+							return -1;
+					  	if (a.timestamp < b.timestamp)
+					    	return 1;
+					  	return 0;
+					}
+
+					keyValues.sort(compare);
+					MessageApp.participants = keyValues;
+            	},
+
+                formatPreview: function(text) {
+                    var newText = text.substring(0,70);
+                    if (text.length > newText.length) {
+                        newText += '...';
+                    }
+                    newText = "\"" + newText + "\"";
+                    return newText;
+                }
+            }
+        })
+    })
+</script>
+{% endblock js %}

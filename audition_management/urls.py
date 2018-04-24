@@ -19,5 +19,7 @@ urlpatterns = [
         views.MessageView.as_view(), name="messages"),
     url(r'^invite/(?P<pk>[0-9+]+)$',
         views.InvitationView.as_view(), name="invite"),
-    url(r'^messages/?', views.ChatView.as_view(), name="chat")
+    url(r'^messages/?', views.ChatView.as_view(), name="chat"),
+    url(r'^send/(?P<pk>[0-9+]+)$', views.SendView.as_view(), name='send'),
+    url(r'^conversations/?', views.ConversationView.as_view(), name="conversations")
 ]
