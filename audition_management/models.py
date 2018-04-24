@@ -160,6 +160,25 @@ class Application(models.Model):
         }
 
 
+class DeletedApplication(models.Model):
+    user = models.ForeignKey(
+        AuditionAccount,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+    posting = models.ForeignKey(
+        Role,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+
+    def as_dict(self):
+        return {
+            "user": self.user.as_dict(),
+            "id": self.pk,
+        }
+
+
 class PastWork(models.Model):
     name = models.CharField("Description of Past Works", max_length=128)
     account = models.ForeignKey(
