@@ -200,10 +200,10 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
-        email_user({
-            "user": request.user,
-            "message": "Fuck you pal"
-        }, request.user.email)
+        # email_user({
+        #     "user": request.user,
+        #     "message": "Fuck you pal"
+        # }, request.user.email)
         if not is_casting_agent(request.user):
             roles = self.get_roles(request)
         else:
