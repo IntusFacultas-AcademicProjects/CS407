@@ -164,12 +164,12 @@ class DeletedApplication(models.Model):
     user = models.ForeignKey(
         AuditionAccount,
         on_delete=models.CASCADE,
-        related_name="applications",
+        related_name="denied_applications",
     )
     posting = models.ForeignKey(
         Role,
         on_delete=models.CASCADE,
-        related_name="applications",
+        related_name="denied_applications",
     )
 
     def as_dict(self):

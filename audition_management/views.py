@@ -140,7 +140,7 @@ class DashboardView(LoginRequiredMixin, View):
         tags = account.tags.all()
         matching_roles = []
         for role in roles:
-            if DeletedApplication.objects.filter(user=account, posting=role) > 0:
+            if account.denied_applications.filter(posting__pk=role.id).count() > 0:
                 continue
             role_score = 0
             for tag in tags:
