@@ -1,4 +1,6 @@
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -21,6 +23,28 @@ from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
 from operator import itemgetter, attrgetter
+
+
+def email_user(context, contact_email):
+    """
+    context is a JSON object in the format of:
+
+    {
+        'user': Django user object,
+        "message": String,
+    }
+    contact_email is the email to be sent to
+    """
+    message = render_to_string(
+        'audition_management/email.html',
+        context)
+    send_mail(
+        'AuditionMe Alert',
+        message,
+        "postmaster@sandbox5a43426cc809431499f0413215c63ae3.mailgun.org",
+        [contact_email],
+        fail_silently=False,
+    )
 
 
 def is_casting_agent(current_user):
@@ -176,6 +200,10 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
+        email_user({
+            "user": request.user,
+            "message": "Fuck you pal"
+        }, "pdelmora@purdue.edu")
         if not is_casting_agent(request.user):
             roles = self.get_roles(request)
         else:
@@ -654,7 +682,7 @@ class MessageView(LoginRequiredMixin, View):
     def get(self, request, pk):
         return render(request, 'audition_management/chats.html', {
 
-            })
+        })
 
     def post(self, request, pk):
         alert = Alert.objects.get(pk=pk)
@@ -711,37 +739,39 @@ class ChatView(LoginRequiredMixin, View):
         )
         return HttpResponse("Ok", status=200)
 
+
 class ConversationView(LoginRequiredMixin, View):
 
     def get(self, request):
-        
-            user = request.user
-            messaged_users = user.sent_messages.all().values('receiver').distinct()
-            message_chats = []
-            for receiver in messaged_users:
-                messages_sent = user.sent_messages.filter(
-                    receiver=receiver["receiver"])
-                messages_received = user.received_messages.filter(
-                    sender=receiver["receiver"])
-                messages = messages_sent | messages_received
-                messages = messages.order_by("timestamp")
-                message_logs = [obj.as_dict() for obj in messages]
-                receiver_django = User.objects.get(pk=receiver["receiver"])
-                message_chats.append({
-                    "participant": {
-                        "pk": receiver["receiver"],
-                        "name": receiver_django.first_name + " " + 
-                                receiver_django.last_name
-                    },
-                    "messages": message_logs
-                })
-            print(message_chats)
-            return render(request, 'audition_management/messages.html', {
-                'user': user,
-                'data': message_chats
 
+        user = request.user
+        messaged_users = user.sent_messages.all().values('receiver').distinct()
+        message_chats = []
+        for receiver in messaged_users:
+            messages_sent = user.sent_messages.filter(
+                receiver=receiver["receiver"])
+            messages_received = user.received_messages.filter(
+                sender=receiver["receiver"])
+            messages = messages_sent | messages_received
+            messages = messages.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages]
+            receiver_django = User.objects.get(pk=receiver["receiver"])
+            message_chats.append({
+                "participant": {
+                    "pk": receiver["receiver"],
+                    "name": receiver_django.first_name + " " +
+                    receiver_django.last_name
+                },
+                "messages": message_logs
             })
-        
+        print(message_chats)
+        return render(request, 'audition_management/messages.html', {
+            'user': user,
+            'data': message_chats
+
+        })
+
+
 class SendView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
@@ -753,6 +783,6 @@ class SendView(LoginRequiredMixin, View):
             receiver = user.audition_account
         print(receiver)
         return render(request, 'audition_management/send.html', {
-                'receiver': receiver,
-                'pk': pk
-            })
+            'receiver': receiver,
+            'pk': pk
+        })
