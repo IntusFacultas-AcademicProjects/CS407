@@ -727,6 +727,10 @@ class ChatView(LoginRequiredMixin, View):
             sender=sender,
             text=text
         )
+        Alert.objects.create(
+            text="New message from {}".format(sender.first_name),
+            account=receiver)
+
         return HttpResponse("Ok", status=200)
 
 class ConversationView(LoginRequiredMixin, View):
