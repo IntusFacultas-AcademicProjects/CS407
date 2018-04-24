@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from audition_management.models import (
-    PastWork, Role, PerformanceEvent, Tag, AuditionAccount)
+    CastingAccount, PastWork, Role, PerformanceEvent, Tag, AuditionAccount)
 from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
     Select2Widget
@@ -81,10 +81,11 @@ class AuditionSettingsForm(forms.ModelForm):
                         print("API Failure")
         return data
 
+
 class CastingSettingsForm(forms.ModelForm):
     class Meta:
         model = CastingAccount
-        fields = ('location','phone')
+        fields = ('location', 'phone')
 
     def clean_location(self):
         data = self.cleaned_data['location']
