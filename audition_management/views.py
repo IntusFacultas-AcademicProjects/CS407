@@ -11,11 +11,8 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-<<<<<<< HEAD
-    Role, RoleViewModel, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
-=======
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message, DeletedApplication)
->>>>>>> origin/master
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message,
+    RoleViewModel, DeletedApplication)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -23,24 +20,11 @@ import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
-<<<<<<< HEAD
-    AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
-=======
-    AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+    AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet,
+    PortfolioFormSet)
 from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
-from operator import itemgetter, attrgetter
-
-def send_message(to_email, subject, body):
-    return requests.post(
-        "https://api.mailgun.net/v3/sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org/messages",
-        auth=("api", "key-1fb97b84111a8967688b10c4578fd804"),
-        data={"from": "Mailgun Sandbox <postmaster@sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org>",
-              "to": to_email,
-              "subject": subject,
-              "text": body})
->>>>>>> origin/master
 
 
 def email_user(context, contact_email):
@@ -518,7 +502,7 @@ class RoleView(LoginRequiredMixin, View):
         if not is_casting_agent(request.user) and not RoleViewModel.objects.get(role=role, account=request.user):
             newview = RoleViewModel(role=role, account=request.user)
             newview.save()
-        views = RoleViewModel.objects.filter(role=role).count();
+        views = RoleViewModel.objects.filter(role=role).count()
         return render(request, 'audition_management/role.html', {
             "role": role,
             "is_casting": is_casting_agent(request.user),
@@ -546,7 +530,8 @@ class RoleView(LoginRequiredMixin, View):
             application = Application.objects.get(pk=application_pk)
             role = application.posting
             Alert.objects.create(
-                text="Your application for role # {} has been deleted.".format(role.id),
+                text="Your application for role # {} has been deleted.".format(
+                    role.id),
                 account=application.user.profile)
             DeletedApplication.objects.create(
                 user=application.user,
