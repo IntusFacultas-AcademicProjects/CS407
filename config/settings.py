@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.11/ref/settings/
 
 import os
 
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -143,3 +144,5 @@ SELECT2_JS = 'js/select2.full.min.js'
 
 SELECT2_CSS = 'css/select2.css'
 SELECT2_BOOTSTRAP = True
+
+django_heroku.settings(locals())
