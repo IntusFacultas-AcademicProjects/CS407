@@ -159,6 +159,14 @@
             },
             mounted: function() {
                 this.tags = data;
+                $('.date').datetimepicker({
+                    "format": "YYYY-MM-DD hh:mm",
+                    "icons": {
+                        "date": "glyphicon glyphicon-time",
+                        "up": "fa fa-arrow-up",
+                        "down": "fa fa-arrow-down"
+                    }
+                }); 
             },
             methods: {
                 updateTags: function(event) {
@@ -189,6 +197,10 @@
                     }
                     else {
                         // do nothing, typing
+                        if (app.insert[app.insert.length - 1] == '"' || app.insert[app.insert.length - 1] == "'" || app.insert[app.insert.length - 1] == '\\') {
+                            console.log("illegal character");
+                            app.insert = app.insert.substring(0, app.insert.length - 1)
+                        }
                     }
                 },
                 removeTags: function() {

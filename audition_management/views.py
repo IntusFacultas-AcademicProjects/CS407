@@ -1,5 +1,6 @@
 import geopy as geopy
 from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -9,7 +10,7 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert)
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -18,6 +19,10 @@ import json
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
     AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+from pygeocoder import Geocoder
+import geopy.distance
+from pygeolib import GeocoderError
+from operator import itemgetter, attrgetter
 import usaddress
 import geopy
 from geopy.geocoders import Nominatim
@@ -73,40 +78,6 @@ def get_user(current_user):
     return user
 
 
-def address_reformat(address):
-    dict = usaddress.parse(address)
-    return "{} {} {} {} {}".format(
-        dict['AddressNumber'],
-        dict['StreetName'],
-        dict['StreetNamePostType'],
-        dict['PlaceName'],
-        dict['StateName']
-    )
-
-
-# Returns the miles between two addresses
-def get_distance_between_addresses(address1, address2):
-    # Attempt to reformat addresses to something more parable.
-    # usaddress is fairly robust so if this fails we have no hope and should return -1 to signify an error
-    try:
-        address1 = address_reformat(address1)
-        address2 = address_reformat(address2)
-
-        # Get the location objects of the addresses
-        geolocator = Nominatim()
-        location1 = geolocator.geocode(address1)
-        location2 = geolocator.geocode(address2)
-
-        # Get the coordinates of the addresses
-        cordinates1 = (location1.latitude, location1.longitude)
-        cordinates2 = (location2.latitude, location2.longitude)
-
-        # Get the distance between the two addresses
-        return geopy.distance.vincenty(cordinates1, cordinates2).miles
-    except Exception:
-        return -1
-
-
 class DashboardView(LoginRequiredMixin, View):
 
     def similar(self, a, b):
@@ -121,7 +92,44 @@ class DashboardView(LoginRequiredMixin, View):
         return role_tag_synonyms
 
     def get_roles(self, request):
-        #roles = Role.objects.all()
+        def compare_roles(a, b):
+            print(a["score"])
+            print(b["score"])
+            if (a["score"] > b["score"]):
+                return 1
+            elif (b["score"] > a["score"]):
+                return -1
+            else:
+                if a["distance"] > b["distance"]:
+                    return 1
+                elif b["distance"] > a["distance"]:
+                    return -1
+                else:
+                    return 0
+
+        def cmp_to_key(mycmp):
+            class K:
+                def __init__(self, obj, *args):
+                    self.obj = obj
+
+                def __lt__(self, other):
+                    return mycmp(self.obj, other.obj) < 0
+
+                def __gt__(self, other):
+                    return mycmp(self.obj, other.obj) > 0
+
+                def __eq__(self, other):
+                    return mycmp(self.obj, other.obj) == 0
+
+                def __le__(self, other):
+                    return mycmp(self.obj, other.obj) <= 0
+
+                def __ge__(self, other):
+                    return mycmp(self.obj, other.obj) >= 0
+
+                def __ne__(self, other):
+                    return mycmp(self.obj, other.obj) != 0
+            return K
         roles = Role.objects.filter(status=1)
         account = request.user.audition_account
         tags = account.tags.all()
@@ -143,9 +151,31 @@ class DashboardView(LoginRequiredMixin, View):
                             role_score += 1
                             break
             if role_score > 0:
-                matching_roles.append({'role': role, 'score': role_score})
+                # distance is a big number at first so low priority until changed
+                distance = 1000000000
+                try:
+                    role_location = Geocoder.geocode(role.studio_address)
+                    user_location = Geocoder.geocode(account.location)
+                    distance = geopy.distance.vincenty(
+                        role_location.coordinates,
+                        user_location.coordinates
+                    ).km
+                except GeocoderError as e:
+                    if e.status == "ZERO_RESULTS":
+                        print("location doesn't exist")
+                    else:
+                        print("API Failure")
+                matching_roles.append(
+                    {
+                        'role': role,
+                        'score': role_score,
+                        'distance': distance
+                    }
+                )
+
         matching_roles_sorted = sorted(
-            matching_roles, key=lambda k: k['score'], reverse=True)
+            matching_roles, key=cmp_to_key(compare_roles), reverse=True)
+        print(matching_roles_sorted)
         return [r['role'] for r in matching_roles_sorted]
 
     def get(self, request):
@@ -157,7 +187,8 @@ class DashboardView(LoginRequiredMixin, View):
             roles = Role.objects.filter(status=1)
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
-        all_roles_dictionaries = [obj.as_dict() for obj in Role.objects.filter(status=1)]
+        all_roles_dictionaries = [obj.as_dict()
+                                  for obj in Role.objects.filter(status=1)]
         print(all_roles_dictionaries)
 
         # Later, these roles will be filtered and ordered based on a number
@@ -247,6 +278,7 @@ class SettingsView(LoginRequiredMixin, View):
             })
 
     def post(self, request):
+        print("posted")
         # form_type is used to tell which form was submitted.
         if request.POST.get("form_type") == 'account_form':
             form = SettingsForm(request.POST, instance=request.user)
@@ -290,7 +322,8 @@ class SettingsView(LoginRequiredMixin, View):
                         "portfolio_formset": portfolioformset,
                     })
         elif request.POST.get("form_type") == 'audition_form':
-            form = AuditionSettingsForm(request.POST, instance=request.user)
+            form = AuditionSettingsForm(
+                request.POST, instance=request.user.audition_account)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -327,10 +360,13 @@ class SettingsView(LoginRequiredMixin, View):
                 instance=request.user.audition_account)
             if formset.is_valid():
                 for form in formset:
-                    if form.is_valid():
+                    if (form.is_valid() and
+                            form.cleaned_data.get('DELETE') is False):
                         pastwork = form.save(commit=False)
                         pastwork.account = request.user.audition_account
                         pastwork.save()
+                    elif (form.cleaned_data.get('DELETE') is True):
+                        form.cleaned_data.get('id').delete()
                 messages.success(
                     request, "Portfolio successfully updated.")
                 return HttpResponseRedirect(
@@ -352,6 +388,12 @@ class SettingsView(LoginRequiredMixin, View):
                     "audition_form": audition_form,
                     "portfolio_formset": formset
                 })
+        elif request.POST.get("form_type") == 'delete':
+            Role.objects.get(pk=request.POST.get("pk")).delete()
+            messages.success(
+                request, "Role Successfully Deleted")
+            return HttpResponseRedirect(
+                reverse("audition_management:settings"))
         else:
             form = PasswordChangeForm(request.user, request.POST)
             if form.is_valid():
@@ -431,7 +473,7 @@ class UserView(LoginRequiredMixin, View):
         if is_casting:
             user = user.casting_account
             # grab all events made by the user
-            events = user.roles.all()
+            events = user.roles.filter(status=1)
             events = [obj.as_dict() for obj in events]
         else:
             user = user.audition_account
@@ -479,7 +521,9 @@ class RoleCreationView(LoginRequiredMixin, View):
             })
         else:
             for form in formset:
-                if form.is_valid():
+                print(form.empty_permitted)
+                print(form.has_changed())
+                if form.is_valid() and form.has_changed():
                     event = form.save(commit=False)
                     event.role = role
                     event.save()
@@ -511,7 +555,7 @@ class TagCreationView(LoginRequiredMixin, View):
             })
         else:
             for form in formset:
-                if form.is_valid():
+                if form.is_valid() and form.has_changed():
                     tag = form.save(commit=False)
                     tag.role = role
                     tag.save()
@@ -554,8 +598,12 @@ class EditRoleView(LoginRequiredMixin, View):
                 elif (form.cleaned_data.get('DELETE') is True):
                     form.cleaned_data.get('id').delete()
                 elif form.is_valid() is False:
+                    print(form.data)
+                    print(form.cleaned_data)
                     role = Role.objects.get(pk=pk)
                     form = EditRoleForm(instance=role, prefix="form1")
+                    messages.error(
+                        request, "Please review your data and try again.")
                     return render(
                         request,
                         'audition_management/editRole.html',
@@ -576,6 +624,7 @@ class EditRoleView(LoginRequiredMixin, View):
         else:
             role = Role.objects.get(pk=pk)
             formset = EventFormSet(instance=role, prefix="form2")
+            messages.error(request, "Please review your data and try again.")
             return render(request, 'audition_management/editRole.html', {
                 'role': role,
                 'form': form,
@@ -588,7 +637,7 @@ class InvitationView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if not is_casting_agent(request.user):
             messages.error(request,
-                "You cannot invite someone to a role if you are not the owner of that role")
+                           "You cannot invite someone to a role if you are not the owner of that role")
             return HttpResponseRedirect(request.POST.get("url_of_request"))
         user = User.objects.get(pk=pk)
         role = Role.objects.get(pk=request.POST.get("role_pk"))
@@ -601,11 +650,17 @@ class InvitationView(LoginRequiredMixin, View):
             account=user
         )
         messages.success(request,
-            "User has been invited to another round of auditions.")
+                         "User has been invited to another round of auditions.")
         return HttpResponseRedirect(request.POST.get("url_of_request"))
 
 
 class MessageView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        return render(request, 'audition_management/chats.html', {
+
+            })
+
     def post(self, request, pk):
         alert = Alert.objects.get(pk=pk)
         if request.user != alert.account:
@@ -614,3 +669,95 @@ class MessageView(LoginRequiredMixin, View):
         else:
             alert.delete()
             return HttpResponseRedirect(request.POST.get("url_of_request"))
+
+
+class ChatView(LoginRequiredMixin, View):
+    """
+    This does not return a HTML document. This is an AJAX only view
+    specifically for use with a Vue document.
+    """
+
+    def get(self, request):
+        user = request.user
+        messaged_users = user.sent_messages.all().values('receiver').distinct()
+        message_chats = []
+        for receiver in messaged_users:
+            messages_sent = user.sent_messages.filter(
+                receiver=receiver["receiver"])
+            messages_received = user.received_messages.filter(
+                sender=receiver["receiver"])
+            messages = messages_sent | messages_received
+            messages = messages.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages]
+            receiver_django = User.objects.get(pk=receiver["receiver"])
+            message_chats.append({
+                "participant": {
+                    "pk": receiver["receiver"],
+                    "name": receiver_django.first_name + " " +
+                    receiver_django.last_name
+                },
+                "messages": json.dumps(message_logs)
+            })
+        print(message_chats)
+        return JsonResponse({
+            "data": message_chats,
+        })
+
+    def post(self, request):
+        # in all fairness, this is pretty unsafe. No checks made.
+        receiver_pk = request.POST.get("receiver")
+        text = request.POST.get("text")
+        sender = request.user
+        receiver = User.objects.get(pk=receiver_pk)
+        Message.objects.create(
+            receiver=receiver,
+            sender=sender,
+            text=text
+        )
+        return HttpResponse("Ok", status=200)
+
+class ConversationView(LoginRequiredMixin, View):
+
+    def get(self, request):
+
+            user = request.user
+            messaged_users = user.sent_messages.all().values('receiver').distinct()
+            message_chats = []
+            for receiver in messaged_users:
+                messages_sent = user.sent_messages.filter(
+                    receiver=receiver["receiver"])
+                messages_received = user.received_messages.filter(
+                    sender=receiver["receiver"])
+                messages = messages_sent | messages_received
+                messages = messages.order_by("timestamp")
+                message_logs = [obj.as_dict() for obj in messages]
+                receiver_django = User.objects.get(pk=receiver["receiver"])
+                message_chats.append({
+                    "participant": {
+                        "pk": receiver["receiver"],
+                        "name": receiver_django.first_name + " " +
+                                receiver_django.last_name
+                    },
+                    "messages": message_logs
+                })
+            print(message_chats)
+            return render(request, 'audition_management/messages.html', {
+                'user': user,
+                'data': message_chats
+
+            })
+
+class SendView(LoginRequiredMixin, View):
+
+    def get(self, request, pk):
+        receiver = User.objects.get(pk=pk)
+        is_casting = is_casting_agent(receiver)
+        if is_casting:
+            receiver = receiver.casting_account
+        else:
+            receiver = user.audition_account
+        print(receiver)
+        return render(request, 'audition_management/send.html', {
+                'receiver': receiver,
+                'pk': pk
+            })

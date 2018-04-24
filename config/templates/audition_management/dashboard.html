@@ -78,9 +78,8 @@
                         <tr style="background-color:white;">
                             <th>Role</th>
                             <th>Casting Agent</th>
-                            <th>Date</th>
-                            <th>Tags</th>
                             <th>Location</th>
+                            <th>Tags</th>
                             <th>&nbsp;</th>
                         </tr>
                     </thead>
@@ -88,10 +87,9 @@
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
                             <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
-                            <td>(( role.role.date ))</td>
+                            <td>(( role.role.address ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
-                            <td>(( role.role.address ))</td>
                             <td>
                                 <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
                             </td>
@@ -102,6 +100,7 @@
         </div>
     </div>
 </div>
+<hr>
 <h4>All Roles</h4>
 <div id="filterDiv2">
     <div class="row">
@@ -112,9 +111,8 @@
                         <tr style="background-color:white;">
                             <th>Role</th>
                             <th>Casting Agent</th>
-                            <th>Date</th>
-                            <th>Tags</th>
                             <th>Location</th>
+                            <th>Tags</th>
                             <th>&nbsp;</th>
                         </tr>
                     </thead>
@@ -122,10 +120,9 @@
                         <tr v-for="role in displayedRoles">
                             <td>(( role.role.name ))</td>
                             <td> <a v-bind:href="setAgentUrl(role.role.user_pk)"  style="text-decoration: none;">(( role.role.agent ))</a></td>
-                            <td>(( role.role.date ))</td>
+                            <td>(( role.role.address ))</td>
                             <td><span class="badge badge-primary" v-for="tag in role.tags">(( tag ))</span>
                             </td>
-                            <td>(( role.role.address ))</td>
                             <td>
                                 <a v-bind:href="setUrl(role.role.id)" class="btn btn-primary btn-sm pull-right">View</a>
                             </td>
@@ -144,9 +141,9 @@
     var unparsed2 = "{{all_roles}}"
     $(function() {
         unparsed = unparsed.split("&#39;").join("\"").split("&quot;").join("")
-        parsed = processJS(unparsed)
+        parsed = JSON.parse(unparsed)
         unparsed2 = unparsed2.split("&#39;").join("\"").split("&quot;").join("")
-        parsed2 = processJS(unparsed2)    
+        parsed2 = JSON.parse(unparsed2)    
          $("#results").floatThead({
             scrollContainer: function($table){
                 return $table.closest('.wrapper');
