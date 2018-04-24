@@ -1,3 +1,4 @@
+import requests
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
@@ -10,7 +11,11 @@ from django.shortcuts import render
 from django.core.urlresolvers import reverse
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
+<<<<<<< HEAD
+    Role, RoleViewModel, AuditionAccount, CastingAccount, Tag, Application, Alert, Message)
+=======
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message, DeletedApplication)
+>>>>>>> origin/master
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -18,11 +23,24 @@ import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
+<<<<<<< HEAD
+    AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+=======
     AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
 from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
 from operator import itemgetter, attrgetter
+
+def send_message(to_email, subject, body):
+    return requests.post(
+        "https://api.mailgun.net/v3/sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org/messages",
+        auth=("api", "key-1fb97b84111a8967688b10c4578fd804"),
+        data={"from": "Mailgun Sandbox <postmaster@sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org>",
+              "to": to_email,
+              "subject": subject,
+              "text": body})
+>>>>>>> origin/master
 
 
 def email_user(context, contact_email):
@@ -154,6 +172,8 @@ class DashboardView(LoginRequiredMixin, View):
         tags = account.tags.all()
         matching_roles = []
         for role in roles:
+            if account.denied_applications.filter(posting__pk=role.id).count() > 0:
+                continue
             role_score = 0
             for tag in tags:
                 for role_tag in role.tags.all():
@@ -264,6 +284,9 @@ class SettingsView(LoginRequiredMixin, View):
             # grab all events made by the user
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
+            # this form is used to modify account non-password settings
+            castingform = CastingSettingsForm(
+                instance=request.user.audition_account)
         else:
             # grab all applications made by this auditioner
             try:
@@ -288,7 +311,8 @@ class SettingsView(LoginRequiredMixin, View):
                 "change_password_form": change_password_form,
                 "account_type": account_type,
                 "is_casting": is_casting_agent(request.user),
-                "roles": events
+                "roles": events,
+                "casting_form": castingform
             })
         else:
             return render(request, 'session/settings.html', {
@@ -319,12 +343,15 @@ class SettingsView(LoginRequiredMixin, View):
                     # grab all events made by the user
                     events = request.user.roles.all()
                     events = [obj.as_dict() for obj in events]
+                    castingform = CastingSettingsForm(
+                        instance=request.user.casting_account)
                     return render(request, 'session/settings.html', {
                         'form': form,
                         "change_password_form": change_password_form,
                         "account_type": account_type,
                         "is_casting": is_casting_agent(request.user),
-                        "roles": events
+                        "roles": events,
+                        "casting_form": castingform
                     })
                 else:
                     # grab all applications made by this auditioner
@@ -347,6 +374,13 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
+            for tag in request.user.audition_account.tags:
+                if tag.name in AuditionAccount.ETHNICITY_CHOICES or tag.name in AuditionAccount.GENDER_CHOICES:
+                    tag.delete()
+            if form.ethnicity is not None:
+                Tag.objects.create(name=form.ethnicity, account=request.user)
+            if form.gender is not None:
+                Tag.objects.create(name=form.gender, account=request.user)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -365,6 +399,29 @@ class SettingsView(LoginRequiredMixin, View):
                     "is_casting": is_casting_agent(request.user),
                     "audition_form": form,
                     "portfolio_formset": portfolio_formset
+                })
+        elif request.POST.get("form_type") == 'casting_form':
+            form = CastingSettingsForm(
+                request.POST, instance=request.user.audition_account)
+            if form.is_valid():
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                # grab all events made by the user
+                events = request.user.roles.all()
+                events = [obj.as_dict() for obj in events]
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "roles": events,
+                    "casting_form": form
                 })
         elif request.POST.get("form_type") == 'tag_formset':
             update_tags = json.loads(request.POST.get("update_tags"))
@@ -458,10 +515,15 @@ class RoleView(LoginRequiredMixin, View):
         role = Role.objects.get(id=pk)
         auditions = role.applications.all()
         auditions = [obj.as_dict() for obj in auditions]
+        if not is_casting_agent(request.user) and not RoleViewModel.objects.get(role=role, account=request.user):
+            newview = RoleViewModel(role=role, account=request.user)
+            newview.save()
+        views = RoleViewModel.objects.filter(role=role).count();
         return render(request, 'audition_management/role.html', {
             "role": role,
             "is_casting": is_casting_agent(request.user),
-            "auditions": auditions
+            "auditions": auditions,
+            "views": views
         })
 
     def post(self, request, pk):
@@ -481,6 +543,15 @@ class RoleView(LoginRequiredMixin, View):
                 reverse("audition_management:role", args=[role.id]))
         else:
             application_pk = request.POST.get("pk")
+            application = Application.objects.get(pk=application_pk)
+            role = application.posting
+            Alert.objects.create(
+                text="Your application for role # {} has been deleted.".format(role.id),
+                account=application.user.profile)
+            DeletedApplication.objects.create(
+                user=application.user,
+                posting=application.posting
+            )
             Application.objects.get(pk=application_pk).delete()
             messages.success(request, "Application deleted")
             return HttpResponseRedirect(
@@ -549,6 +620,7 @@ class RoleCreationView(LoginRequiredMixin, View):
                 if form.is_valid() and form.has_changed():
                     event = form.save(commit=False)
                     event.role = role
+                    role.views = 0
                     event.save()
             messages.success(
                 request, "Role successfully created.")
@@ -737,6 +809,10 @@ class ChatView(LoginRequiredMixin, View):
             sender=sender,
             text=text
         )
+        Alert.objects.create(
+            text="New message from {}".format(sender.first_name),
+            account=receiver)
+
         return HttpResponse("Ok", status=200)
 
 
