@@ -521,8 +521,18 @@ class RoleView(LoginRequiredMixin, View):
             Alert.objects.create(
                 text=text,
                 account=role.agent.profile)
+            email_user({
+                "user": role.agent,
+                "message": "{} {} has applied for your role: {}".format(
+                    request.user.first_name,
+                    request.user.last_name,
+                    role.name
+                )
+            }, role.agent.profile.email)
             messages.success(
-                request, "Audition request has been sent. The casting agent will be in touch with you.")
+                request,
+                "Audition request has been sent. The casting +\
+                     agent will be in touch with you.")
             return HttpResponseRedirect(
                 reverse("audition_management:role", args=[role.id]))
         else:
@@ -716,15 +726,23 @@ class EditRoleView(LoginRequiredMixin, View):
 class InvitationView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if not is_casting_agent(request.user):
-            messages.error(request,
-                           "You cannot invite someone to a role if you are not the owner of that role")
+            messages.error(
+                request,
+                "You cannot invite someone to a role if you are +\
+                not the owner of that role"
+            )
             return HttpResponseRedirect(request.POST.get("url_of_request"))
         user = User.objects.get(pk=pk)
         role = Role.objects.get(pk=request.POST.get("role_pk"))
-        text = "{} has invited you to another round of auditions for {}. Arrange a time with them over email.".format(
+        text = "{} has invited you to another round of auditions for {}. Arrange +\
+             a time with them over email.".format(
             request.user.casting_account,
             role
         )
+        email_user({
+            "user": user,
+            "message": text
+        }, user.email)
         Alert.objects.create(
             text=text,
             account=user
