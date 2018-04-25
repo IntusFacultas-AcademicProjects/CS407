@@ -523,7 +523,7 @@ class RoleView(LoginRequiredMixin, View):
                 text=text,
                 account=role.agent.profile)
             email_user({
-                "user": role.agent,
+                "user": role.agent.profile,
                 "message": "{} {} has applied for your role: {}".format(
                     request.user.first_name,
                     request.user.last_name,
