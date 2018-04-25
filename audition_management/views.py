@@ -270,7 +270,7 @@ class SettingsView(LoginRequiredMixin, View):
             events = [obj.as_dict() for obj in events]
             # this form is used to modify account non-password settings
             castingform = CastingSettingsForm(
-                instance=request.user.audition_account)
+                instance=request.user.casting_account)
         else:
             # grab all applications made by this auditioner
             try:
