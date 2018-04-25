@@ -499,7 +499,8 @@ class RoleView(LoginRequiredMixin, View):
         role = Role.objects.get(id=pk)
         auditions = role.applications.all()
         auditions = [obj.as_dict() for obj in auditions]
-        if not is_casting_agent(request.user) and request.user.roleview is None:
+        if (not is_casting_agent(request.user) and
+                request.user.audition_account.roleview is None):
             newview = RoleViewModel(role=role, account=request.user)
             newview.save()
         views = RoleViewModel.objects.filter(role=role).count()
