@@ -811,7 +811,7 @@ class ChatView(LoginRequiredMixin, View):
                 "messages": json.dumps(message_logs)
             })
         for messenger in user.received_messages.all().values('sender').distinct():
-            print(user.sent_messages.filter(receiver=messenger).count())
+            print(""+user.sent_messages.filter(receiver=messenger).count())
             if user.sent_messages.filter(receiver=messenger).count() > 0:
                 continue
             messages_received = user.received_messages.filter(sender=messenger)
