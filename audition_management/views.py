@@ -360,15 +360,25 @@ class SettingsView(LoginRequiredMixin, View):
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
             if form.is_valid():
+                ethnic_choices = []
+                gender_choices = []
+                for tup in AuditionAccount.ETHNICITY_CHOICES:
+                    ethnic_choices.append(tup[1])
+                for tup in AuditionAccount.GENDER_CHOICES:
+                    gender_choices.append(tup[1])
                 for tag in request.user.audition_account.tags.all():
-                    if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
-                            tag.name in AuditionAccount.GENDER_CHOICES):
+                    if (tag.name in ethnic_choices or
+                            tag.name in gender_choices):
                         tag.delete()
                 if form.cleaned_data['ethnicity'] is not None:
-                    Tag.objects.create(name=form.cleaned_data['ethnicity'],
+                    Tag.objects.create(
+                        name=AuditionAccount.ETHNICITY_CHOICES[
+                            form.cleaned_data['ethnicity']][1],
                         account=request.user.audition_account)
                 if form.cleaned_data['gender'] is not None:
-                    Tag.objects.create(name=form.cleaned_data['gender'],
+                    Tag.objects.create(
+                        name=AuditionAccount.GENDER_CHOICES[
+                            form.cleaned_data['gender']][1],
                         account=request.user.audition_account)
                 form.save()
                 messages.success(request, "Account updated successfully.")
