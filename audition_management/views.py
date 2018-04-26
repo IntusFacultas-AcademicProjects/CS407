@@ -366,10 +366,10 @@ class SettingsView(LoginRequiredMixin, View):
                         tag.delete()
                 if form.cleaned_data['ethnicity'] is not None:
                     Tag.objects.create(name=form.cleaned_data['ethnicity'],
-                        account=request.user)
+                        account=request.user.audition_account)
                 if form.cleaned_data['gender'] is not None:
                     Tag.objects.create(name=form.cleaned_data['gender'],
-                        account=request.user)
+                        account=request.user.audition_account)
                 form.save()
                 messages.success(request, "Account updated successfully.")
                 return HttpResponseRedirect(
