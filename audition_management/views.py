@@ -216,9 +216,12 @@ class DashboardView(LoginRequiredMixin, View):
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
         all_roles = []
-        for role in Role.objects.filter(status=1):
-            if not account.denied_applications.filter(posting__pk=role.id).count() > 0:
-                all_roles.append(role)
+        if not is_casting_agent(request.user):
+            for role in Role.objects.filter(status=1):
+                if not request.user.audition_account.denied_applications.filter(posting__pk=role.id).count() > 0:
+                    all_roles.append(role)
+        else:
+            all_roles = Role.objects.filter(status=1)
         all_roles_dictionaries = [obj.as_dict() for obj in all_roles]
         print(all_roles_dictionaries)
 
