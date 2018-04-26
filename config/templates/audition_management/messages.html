@@ -14,7 +14,7 @@
 				<div class="panel-body" style="overflow-y: auto; height: 603px;">
                     <div class="panel panel-info">
                          <template v-for="participant in participants">
-                            <div class="well">
+                            <div class="well" style="margin:0">
                                 <h4>((participant.name))<small v-text="formatTime(participant.timestamp, 0)" class="pull-right"></small></h4>
                                 <a v-on:click="fetchMessages(participant)" class="btn btn-primary btn-sm pull-right"> View </a>
                                 <p v-text="formatPreview(participant.lastMessage)" class="text-muted"></p>
