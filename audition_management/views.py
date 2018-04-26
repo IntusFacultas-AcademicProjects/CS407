@@ -363,9 +363,9 @@ class SettingsView(LoginRequiredMixin, View):
                 if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
                         tag.name in AuditionAccount.GENDER_CHOICES):
                     tag.delete()
-            if form.ethnicity is not None:
+            if form.cleaned_data['ethnicity'] is not None:
                 Tag.objects.create(name=form.ethnicity, account=request.user)
-            if form.gender is not None:
+            if form.cleaned_data['gender'] is not None:
                 Tag.objects.create(name=form.gender, account=request.user)
             if form.is_valid():
                 form.save()
