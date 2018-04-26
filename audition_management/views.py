@@ -9,6 +9,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.views import View
 from audition_management.models import (
     Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message,
@@ -797,7 +798,20 @@ class ChatView(LoginRequiredMixin, View):
                 },
                 "messages": json.dumps(message_logs)
             })
-        print(message_chats)
+        for messenger in user.received_messages.all().values('sender').distinct():
+            if user.sent_messages.filter(receiver=messenger).count() > 0:
+                continue
+            messages_received = user.received_messages.filter(sender=messenger)
+            messages = messages.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages]
+            message_chats.append({
+                "participant": {
+                    "pk": messenger.id,
+                    "name": messenger.first_name + " " +
+                    messenger.last_name
+                },
+                "messages": json.dumps(message_logs)
+            })
         return JsonResponse({
             "data": message_chats,
         })
@@ -860,7 +874,7 @@ class SendView(LoginRequiredMixin, View):
         if is_casting:
             receiver = receiver.casting_account
         else:
-            receiver = user.audition_account
+            receiver = receiver.audition_account
         print(receiver)
         return render(request, 'audition_management/send.html', {
             'receiver': receiver,
