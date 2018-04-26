@@ -812,12 +812,12 @@ class ChatView(LoginRequiredMixin, View):
             })
         for messenger in user.received_messages.all().values('sender').distinct():
             count = user.sent_messages.filter(receiver=messenger['sender']).count()
-            print(type(count))
+            print(""+count)
             if user.sent_messages.filter(receiver=messenger['sender']).count() > 0:
                 continue
             messages_received = user.received_messages.filter(sender=messenger['sender'])
-            messages = messages.order_by("timestamp")
-            message_logs = [obj.as_dict() for obj in messages]
+            messages_received = messages_received.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages_received]
             messenger_django = User.objects.get(pk=receiver["sender"])
             message_chats.append({
                 "participant": {
