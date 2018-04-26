@@ -85,6 +85,15 @@
 	            							{{external_user.location}}
 	            						</td>
 	            					</tr>
+	            					{% else %}
+	            					<tr>
+	            						<th>Phone</th>
+	            						<td>{{external_user.phone}}</td>
+	            					</tr>
+	            					<tr>
+	            						<th>Location</th>
+	            						<td>{{external_user.location}}</td>
+	            					</tr>
 	            					{% endif %}
 	            				</tbody>
 	            			</table>

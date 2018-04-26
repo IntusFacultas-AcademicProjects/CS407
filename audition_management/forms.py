@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from audition_management.models import (
-    PastWork, Role, PerformanceEvent, Tag, AuditionAccount)
+    CastingAccount, PastWork, Role, PerformanceEvent, Tag, AuditionAccount)
 from bootstrap3_datetime.widgets import DateTimePicker
 from django_select2.forms import (
     Select2Widget
@@ -20,30 +20,34 @@ class SettingsForm(forms.ModelForm):
     # TODO validate better
     def clean_username(self):
         data = self.cleaned_data['username']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_first_name(self):
         data = self.cleaned_data['first_name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_last_name(self):
         data = self.cleaned_data['last_name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_email(self):
         data = self.cleaned_data['email']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
 
@@ -54,9 +58,10 @@ class AuditionSettingsForm(forms.ModelForm):
 
     def clean_location(self):
         data = self.cleaned_data['location']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         try:
             Geocoder.geocode(data)
         except GeocoderError as e:
@@ -82,6 +87,20 @@ class AuditionSettingsForm(forms.ModelForm):
         return data
 
 
+class CastingSettingsForm(forms.ModelForm):
+    class Meta:
+        model = CastingAccount
+        fields = ('location', 'phone')
+
+    def clean_location(self):
+        data = self.cleaned_data['location']
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
+        return data
+
+
 class PortfolioForm(forms.ModelForm):
     class Meta:
         model = PastWork
@@ -89,9 +108,10 @@ class PortfolioForm(forms.ModelForm):
 
     def clean_name(self):
         data = self.cleaned_data['name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
 
@@ -105,23 +125,26 @@ class RoleCreationForm(forms.ModelForm):
 
     def clean_name(self):
         data = self.cleaned_data['name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_description(self):
         data = self.cleaned_data['description']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_studio_address(self):
         data = self.cleaned_data['studio_address']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         try:
             Geocoder.geocode(data)
         except GeocoderError as e:
@@ -158,23 +181,26 @@ class EditRoleForm(forms.ModelForm):
 
     def clean_name(self):
         data = self.cleaned_data['name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_description(self):
         data = self.cleaned_data['description']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
     def clean_studio_address(self):
         data = self.cleaned_data['studio_address']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         try:
             Geocoder.geocode(data)
         except GeocoderError as e:
@@ -207,9 +233,10 @@ class TagForm(forms.ModelForm):
 
     def clean_name(self):
         data = self.cleaned_data['name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
 
@@ -230,9 +257,10 @@ class EventForm(forms.ModelForm):
 
     def clean_name(self):
         data = self.cleaned_data['name']
-        data = data.replace("'", "")
-        data = data.replace('"', "")
-        data = data.replace('\\', "")
+        if data is not None:
+            data = data.replace("'", "")
+            data = data.replace('"', "")
+            data = data.replace('\\', "")
         return data
 
 

@@ -1,5 +1,7 @@
 import requests
 from django.http import HttpResponseRedirect, JsonResponse, HttpResponse
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
 from django.contrib import messages
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -7,9 +9,11 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.models import User
 from django.shortcuts import render
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.views import View
 from audition_management.models import (
-    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message, DeletedApplication)
+    Role, AuditionAccount, CastingAccount, Tag, Application, Alert, Message,
+    RoleViewModel, DeletedApplication)
 from audition_management.forms import SettingsForm
 from difflib import SequenceMatcher
 from nltk.corpus import wordnet
@@ -17,20 +21,33 @@ import json
 # Create your views here.
 from audition_management.forms import (
     RoleCreationForm, EventFormSet, EditRoleForm,
-    AuditionSettingsForm, TagFormSet, ProfileTagFormSet, PortfolioFormSet)
+    AuditionSettingsForm, CastingSettingsForm, TagFormSet, ProfileTagFormSet,
+    PortfolioFormSet)
 from pygeocoder import Geocoder
 import geopy.distance
 from pygeolib import GeocoderError
-from operator import itemgetter, attrgetter
 
-def send_message(to_email, subject, body):
-    return requests.post(
-        "https://api.mailgun.net/v3/sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org/messages",
-        auth=("api", "key-1fb97b84111a8967688b10c4578fd804"),
-        data={"from": "Mailgun Sandbox <postmaster@sandbox5705e19e970d43e5a974c03a6f0af7dd.mailgun.org>",
-              "to": to_email,
-              "subject": subject,
-              "text": body})
+
+def email_user(context, contact_email):
+    """
+    context is a JSON object in the format of:
+
+    {
+        'user': Django user object,
+        "message": String,
+    }
+    contact_email is the email to be sent to
+    """
+    message = render_to_string(
+        'audition_management/email.html',
+        context)
+    send_mail(
+        'AuditionMe Alert',
+        message,
+        "postmaster@sandbox5a43426cc809431499f0413215c63ae3.mailgun.org",
+        [contact_email],
+        fail_silently=False,
+    )
 
 
 def is_casting_agent(current_user):
@@ -188,6 +205,10 @@ class DashboardView(LoginRequiredMixin, View):
     def get(self, request):
         # grabs all roles and returns them in JSON format for the SPA Framework
         # to use
+        # email_user({
+        #     "user": request.user,
+        #     "message": "Fuck you pal"
+        # }, request.user.email)
         if not is_casting_agent(request.user):
             roles = self.get_roles(request)
         else:
@@ -251,6 +272,9 @@ class SettingsView(LoginRequiredMixin, View):
             # grab all events made by the user
             events = user.roles.all()
             events = [obj.as_dict() for obj in events]
+            # this form is used to modify account non-password settings
+            castingform = CastingSettingsForm(
+                instance=request.user.casting_account)
         else:
             # grab all applications made by this auditioner
             try:
@@ -275,7 +299,8 @@ class SettingsView(LoginRequiredMixin, View):
                 "change_password_form": change_password_form,
                 "account_type": account_type,
                 "is_casting": is_casting_agent(request.user),
-                "roles": events
+                "roles": events,
+                "casting_form": castingform
             })
         else:
             return render(request, 'session/settings.html', {
@@ -306,12 +331,15 @@ class SettingsView(LoginRequiredMixin, View):
                     # grab all events made by the user
                     events = request.user.roles.all()
                     events = [obj.as_dict() for obj in events]
+                    castingform = CastingSettingsForm(
+                        instance=request.user.casting_account)
                     return render(request, 'session/settings.html', {
                         'form': form,
                         "change_password_form": change_password_form,
                         "account_type": account_type,
                         "is_casting": is_casting_agent(request.user),
-                        "roles": events
+                        "roles": events,
+                        "casting_form": castingform
                     })
                 else:
                     # grab all applications made by this auditioner
@@ -334,13 +362,47 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
-            for tag in request.user.audition_account.tags:
-                if tag.name in AuditionAccount.ETHNICITY_CHOICES or tag.name in AuditionAccount.GENDER_CHOICES:
-                    tag.delete()
-            if form.ethnicity is not None:
-                Tag.objects.create(name=form.ethnicity, account=request.user)
-            if form.gender is not None:
-                Tag.objects.create(name=form.gender, account=request.user)
+            if form.is_valid():
+                ethnic_choices = []
+                gender_choices = []
+                for tup in AuditionAccount.ETHNICITY_CHOICES:
+                    ethnic_choices.append(tup[1])
+                for tup in AuditionAccount.GENDER_CHOICES:
+                    gender_choices.append(tup[1])
+                for tag in request.user.audition_account.tags.all():
+                    if (tag.name in ethnic_choices or
+                            tag.name in gender_choices):
+                        tag.delete()
+                if form.cleaned_data['ethnicity'] is not None:
+                    Tag.objects.create(
+                        name=AuditionAccount.ETHNICITY_CHOICES[
+                            form.cleaned_data['ethnicity']][1],
+                        account=request.user.audition_account)
+                if form.cleaned_data['gender'] is not None:
+                    Tag.objects.create(
+                        name=AuditionAccount.GENDER_CHOICES[
+                            form.cleaned_data['gender']][1],
+                        account=request.user.audition_account)
+                form.save()
+                messages.success(request, "Account updated successfully.")
+                return HttpResponseRedirect(
+                    reverse("audition_management:settings"))
+            else:
+                account_type = self.get_account_type(request.user)
+                account_form = SettingsForm(instance=request.user)
+                change_password_form = PasswordChangeForm(request.user)
+                portfolio_formset = PortfolioFormSet(prefix="form1")
+                return render(request, 'session/settings.html', {
+                    'form': account_form,
+                    "change_password_form": change_password_form,
+                    "account_type": account_type,
+                    "is_casting": is_casting_agent(request.user),
+                    "audition_form": form,
+                    "portfolio_formset": portfolio_formset
+                })
+        elif request.POST.get("form_type") == 'casting_form':
+            form = CastingSettingsForm(
+                request.POST, instance=request.user.casting_account)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
@@ -350,15 +412,16 @@ class SettingsView(LoginRequiredMixin, View):
                 account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                tag_formset = ProfileTagFormSet(prefix="form1")
-                portfolio_formset = PortfolioFormSet(prefix="form1")
+                # grab all events made by the user
+                events = request.user.roles.all()
+                events = [obj.as_dict() for obj in events]
                 return render(request, 'session/settings.html', {
                     'form': account_form,
                     "change_password_form": change_password_form,
                     "account_type": account_type,
                     "is_casting": is_casting_agent(request.user),
-                    "audition_form": form,
-                    "portfolio_formset": portfolio_formset
+                    "roles": events,
+                    "casting_form": form
                 })
         elif request.POST.get("form_type") == 'tag_formset':
             update_tags = json.loads(request.POST.get("update_tags"))
@@ -452,10 +515,16 @@ class RoleView(LoginRequiredMixin, View):
         role = Role.objects.get(id=pk)
         auditions = role.applications.all()
         auditions = [obj.as_dict() for obj in auditions]
+        if (not is_casting_agent(request.user) and
+                request.user.audition_account.roleview.filter(role=role).count() == 0):
+            newview = RoleViewModel(role=role, account=request.user.audition_account)
+            newview.save()
+        views = role.roleview.all().count()
         return render(request, 'audition_management/role.html', {
             "role": role,
             "is_casting": is_casting_agent(request.user),
-            "auditions": auditions
+            "auditions": auditions,
+            "views": views
         })
 
     def post(self, request, pk):
@@ -469,8 +538,18 @@ class RoleView(LoginRequiredMixin, View):
             Alert.objects.create(
                 text=text,
                 account=role.agent.profile)
+            email_user({
+                "user": role.agent.profile,
+                "message": "{} {} has applied for your role: {}".format(
+                    request.user.first_name,
+                    request.user.last_name,
+                    role.name
+                )
+            }, role.agent.profile.email)
             messages.success(
-                request, "Audition request has been sent. The casting agent will be in touch with you.")
+                request,
+                "Audition request has been sent. The casting \
+                     agent will be in touch with you.")
             return HttpResponseRedirect(
                 reverse("audition_management:role", args=[role.id]))
         else:
@@ -552,6 +631,7 @@ class RoleCreationView(LoginRequiredMixin, View):
                 if form.is_valid() and form.has_changed():
                     event = form.save(commit=False)
                     event.role = role
+                    role.views = 0
                     event.save()
             messages.success(
                 request, "Role successfully created.")
@@ -662,15 +742,23 @@ class EditRoleView(LoginRequiredMixin, View):
 class InvitationView(LoginRequiredMixin, View):
     def post(self, request, pk):
         if not is_casting_agent(request.user):
-            messages.error(request,
-                           "You cannot invite someone to a role if you are not the owner of that role")
+            messages.error(
+                request,
+                "You cannot invite someone to a role if you are \
+                not the owner of that role"
+            )
             return HttpResponseRedirect(request.POST.get("url_of_request"))
         user = User.objects.get(pk=pk)
         role = Role.objects.get(pk=request.POST.get("role_pk"))
-        text = "{} has invited you to another round of auditions for {}. Arrange a time with them over email.".format(
+        text = "{} has invited you to another round of auditions for {}. Arrange \
+             a time with them over email.".format(
             request.user.casting_account,
             role
         )
+        email_user({
+            "user": user,
+            "message": text
+        }, user.email)
         Alert.objects.create(
             text=text,
             account=user
@@ -685,7 +773,7 @@ class MessageView(LoginRequiredMixin, View):
     def get(self, request, pk):
         return render(request, 'audition_management/chats.html', {
 
-            })
+        })
 
     def post(self, request, pk):
         alert = Alert.objects.get(pk=pk)
@@ -724,7 +812,23 @@ class ChatView(LoginRequiredMixin, View):
                 },
                 "messages": json.dumps(message_logs)
             })
-        print(message_chats)
+        for messenger in user.received_messages.all().values('sender').distinct():
+            count = user.sent_messages.filter(receiver=messenger['sender']).count()
+            print("{}".format(count))
+            if user.sent_messages.filter(receiver=messenger['sender']).count() > 0:
+                continue
+            messages_received = user.received_messages.filter(sender=messenger['sender'])
+            messages_received = messages_received.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages_received]
+            messenger_django = User.objects.get(pk=messenger["sender"])
+            message_chats.append({
+                "participant": {
+                    "pk": messenger['sender'],
+                    "name": messenger_django.first_name + " " +
+                    messenger_django.last_name
+                },
+                "messages": json.dumps(message_logs)
+            })
         return JsonResponse({
             "data": message_chats,
         })
@@ -746,37 +850,39 @@ class ChatView(LoginRequiredMixin, View):
 
         return HttpResponse("Ok", status=200)
 
+
 class ConversationView(LoginRequiredMixin, View):
 
     def get(self, request):
-        
-            user = request.user
-            messaged_users = user.sent_messages.all().values('receiver').distinct()
-            message_chats = []
-            for receiver in messaged_users:
-                messages_sent = user.sent_messages.filter(
-                    receiver=receiver["receiver"])
-                messages_received = user.received_messages.filter(
-                    sender=receiver["receiver"])
-                messages = messages_sent | messages_received
-                messages = messages.order_by("timestamp")
-                message_logs = [obj.as_dict() for obj in messages]
-                receiver_django = User.objects.get(pk=receiver["receiver"])
-                message_chats.append({
-                    "participant": {
-                        "pk": receiver["receiver"],
-                        "name": receiver_django.first_name + " " + 
-                                receiver_django.last_name
-                    },
-                    "messages": message_logs
-                })
-            print(message_chats)
-            return render(request, 'audition_management/messages.html', {
-                'user': user,
-                'data': message_chats
 
+        user = request.user
+        messaged_users = user.sent_messages.all().values('receiver').distinct()
+        message_chats = []
+        for receiver in messaged_users:
+            messages_sent = user.sent_messages.filter(
+                receiver=receiver["receiver"])
+            messages_received = user.received_messages.filter(
+                sender=receiver["receiver"])
+            messages = messages_sent | messages_received
+            messages = messages.order_by("timestamp")
+            message_logs = [obj.as_dict() for obj in messages]
+            receiver_django = User.objects.get(pk=receiver["receiver"])
+            message_chats.append({
+                "participant": {
+                    "pk": receiver["receiver"],
+                    "name": receiver_django.first_name + " " +
+                    receiver_django.last_name
+                },
+                "messages": message_logs
             })
-        
+        print(message_chats)
+        return render(request, 'audition_management/messages.html', {
+            'user': user,
+            'data': message_chats
+
+        })
+
+
 class SendView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
@@ -785,9 +891,9 @@ class SendView(LoginRequiredMixin, View):
         if is_casting:
             receiver = receiver.casting_account
         else:
-            receiver = user.audition_account
+            receiver = receiver.audition_account
         print(receiver)
         return render(request, 'audition_management/send.html', {
-                'receiver': receiver,
-                'pk': pk
-            })
+            'receiver': receiver,
+            'pk': pk
+        })
