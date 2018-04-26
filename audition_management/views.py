@@ -399,7 +399,7 @@ class SettingsView(LoginRequiredMixin, View):
                 })
         elif request.POST.get("form_type") == 'casting_form':
             form = CastingSettingsForm(
-                request.POST, instance=request.user.audition_account)
+                request.POST, instance=request.user.casting_account)
             if form.is_valid():
                 form.save()
                 messages.success(request, "Account updated successfully.")
