@@ -811,19 +811,19 @@ class ChatView(LoginRequiredMixin, View):
                 "messages": json.dumps(message_logs)
             })
         for messenger in user.received_messages.all().values('sender').distinct():
-            print(messenger)
-            count = user.sent_messages.filter(receiver=messenger).count()
+            count = user.sent_messages.filter(receiver=messenger['sender']).count()
             print(type(count))
-            if user.sent_messages.filter(receiver=messenger).count() > 0:
+            if user.sent_messages.filter(receiver=messenger['sender']).count() > 0:
                 continue
-            messages_received = user.received_messages.filter(sender=messenger)
+            messages_received = user.received_messages.filter(sender=messenger['sender'])
             messages = messages.order_by("timestamp")
             message_logs = [obj.as_dict() for obj in messages]
+            messenger_django = User.objects.get(pk=receiver["sender"])
             message_chats.append({
                 "participant": {
-                    "pk": messenger.id,
-                    "name": messenger.first_name + " " +
-                    messenger.last_name
+                    "pk": messenger['sender'].id,
+                    "name": messenger_django.first_name + " " +
+                    messenger_django.last_name
                 },
                 "messages": json.dumps(message_logs)
             })
