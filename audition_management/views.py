@@ -359,7 +359,7 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
-            for tag in request.user.audition_account.tags():
+            for tag in request.user.audition_account.tags.all():
                 if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
                         tag.name in AuditionAccount.GENDER_CHOICES):
                     tag.delete()
