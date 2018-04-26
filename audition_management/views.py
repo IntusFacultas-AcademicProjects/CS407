@@ -818,7 +818,7 @@ class ChatView(LoginRequiredMixin, View):
             messages_received = user.received_messages.filter(sender=messenger['sender'])
             messages_received = messages_received.order_by("timestamp")
             message_logs = [obj.as_dict() for obj in messages_received]
-            messenger_django = User.objects.get(pk=receiver["sender"])
+            messenger_django = User.objects.get(pk=messenger["sender"])
             message_chats.append({
                 "participant": {
                     "pk": messenger['sender'].id,
