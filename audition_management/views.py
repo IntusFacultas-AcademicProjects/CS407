@@ -359,15 +359,17 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
-            for tag in request.user.audition_account.tags.all():
-                if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
-                        tag.name in AuditionAccount.GENDER_CHOICES):
-                    tag.delete()
-            if form.data['ethnicity'] is not None:
-                Tag.objects.create(name=form.ethnicity, account=request.user)
-            if form.data['gender'] is not None:
-                Tag.objects.create(name=form.gender, account=request.user)
             if form.is_valid():
+                for tag in request.user.audition_account.tags.all():
+                    if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
+                            tag.name in AuditionAccount.GENDER_CHOICES):
+                        tag.delete()
+                if form.cleaned_data['ethnicity'] is not None:
+                    Tag.objects.create(name=form.cleaned_data['ethnicity'],
+                        account=request.user)
+                if form.cleaned_data['gender'] is not None:
+                    Tag.objects.create(name=form.cleaned_data['gender'],
+                        account=request.user)
                 form.save()
                 messages.success(request, "Account updated successfully.")
                 return HttpResponseRedirect(
