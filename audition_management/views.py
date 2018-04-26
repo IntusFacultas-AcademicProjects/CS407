@@ -194,8 +194,11 @@ class DashboardView(LoginRequiredMixin, View):
             roles = Role.objects.filter(status=1)
         dictionaries = [obj.as_dict() for obj in roles]
         print(dictionaries)
-        all_roles_dictionaries = [obj.as_dict()
-                                  for obj in Role.objects.filter(status=1)]
+        all_roles = []
+        for role in Role.objects.filter(status=1):
+            if not account.denied_applications.filter(posting__pk=role.id).count() > 0:
+                all_roles.append(role)
+        all_roles_dictionaries = [obj.as_dict() for obj in all_roles]
         print(all_roles_dictionaries)
 
         # Later, these roles will be filtered and ordered based on a number
@@ -475,7 +478,7 @@ class RoleView(LoginRequiredMixin, View):
             application = Application.objects.get(pk=application_pk)
             role = application.posting
             Alert.objects.create(
-                text="Your application for role # {} has been deleted.".format(role.id),
+                text="Your application for role '{}' (role #{}) has been deleted.".format(role.name, role.id),
                 account=application.user.profile)
             DeletedApplication.objects.create(
                 user=application.user,
