@@ -358,8 +358,9 @@ class SettingsView(LoginRequiredMixin, View):
         elif request.POST.get("form_type") == 'audition_form':
             form = AuditionSettingsForm(
                 request.POST, instance=request.user.audition_account)
-            for tag in request.user.audition_account.tags:
-                if tag.name in AuditionAccount.ETHNICITY_CHOICES or tag.name in AuditionAccount.GENDER_CHOICES:
+            for tag in request.user.audition_account.tags():
+                if (tag.name in AuditionAccount.ETHNICITY_CHOICES or
+                        tag.name in AuditionAccount.GENDER_CHOICES):
                     tag.delete()
             if form.ethnicity is not None:
                 Tag.objects.create(name=form.ethnicity, account=request.user)
@@ -374,7 +375,6 @@ class SettingsView(LoginRequiredMixin, View):
                 account_type = self.get_account_type(request.user)
                 account_form = SettingsForm(instance=request.user)
                 change_password_form = PasswordChangeForm(request.user)
-                tag_formset = ProfileTagFormSet(prefix="form1")
                 portfolio_formset = PortfolioFormSet(prefix="form1")
                 return render(request, 'session/settings.html', {
                     'form': account_form,
