@@ -821,7 +821,7 @@ class ChatView(LoginRequiredMixin, View):
             messenger_django = User.objects.get(pk=messenger["sender"])
             message_chats.append({
                 "participant": {
-                    "pk": messenger['sender'].id,
+                    "pk": messenger['sender'],
                     "name": messenger_django.first_name + " " +
                     messenger_django.last_name
                 },
